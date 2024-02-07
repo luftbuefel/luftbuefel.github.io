@@ -9,34 +9,42 @@
             width: 100vw;
             height: 100vh;
             margin: 0;
-            background: radial-gradient(#1e1e1e, #000000);
+            background: radial-gradient(#69060b, #000000);
             overflow: hidden;
-        }
-        h2 {
-          position: relative;
-          left: 50px;
-          color:white;
-        }
-        footer{
-          position: absolute;
-          left: 50px;
-          bottom: 10px;
-          color:white;    
+            color: white;
         }
 
+        h2 {
+            position: absolute;
+            top: 10px;
+            left: 50px;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 10px;
+            left: 50px;
+        }
     </style>
 </head>
 <body>
-    <h2>Adventures in AR</h2>
+<h2>Adventures in AR</h2>
 <script type="module">
     import * as THREE from './build/three.module.js';
     import {OrbitControls} from './js/OrbitControls.js';
     import {FlakesTexture} from './js/FlakesTexture.js';
     import {RGBELoader} from './js/RGBELoader.js';
 
+    //scene elements
     let scene, camera, renderer, controls, pointlight;
 
+    //rotational controls
+    let mesh;
+    let percentageOfMaxSpeed = 0.5;
+    let maxSpeed = 0.04;
+
     function init() {
+        //instantiate the scene
         scene = new THREE.Scene();
         renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -49,8 +57,8 @@
         camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
         camera.position.set(0, 0, 500);
         controls = new OrbitControls(camera, renderer.domElement);
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.6;
+        controls.autoRotate = false;
+        //controls.autoRotateSpeed = 0.6;
         controls.enableDamping = true;
         //lighting
         pointlight = new THREE.PointLight(0xffffff, 1);
@@ -59,7 +67,7 @@
 
         let envmaploader = new THREE.PMREMGenerator(renderer);
 
-        new RGBELoader().setPath('./textures/').load('delta_2_4k.hdr',
+        new RGBELoader().setPath('textures/').load('puresky.hdr',
             function (hdrmap) {
                 let envmap = envmaploader.fromCubemap(hdrmap);
 
@@ -73,7 +81,7 @@
                 texture.repeat.y = 6;
                 //material
                 const sphereMaterial = {
-                    color: 0xca18b7,
+                    color: 0xff0000,
                     clearcoatRoughness: 0.1,
                     clearcoat: 1.0,
                     roughness: 0.5,
@@ -88,19 +96,41 @@
                 let sphereMat = new THREE.MeshPhysicalMaterial(sphereMaterial);
                 let sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
                 scene.add(sphereMesh);
+                mesh = sphereMesh;
                 animate();
             }
         );
     }
 
     function animate() {
+        mesh.rotation.y += maxSpeed * percentageOfMaxSpeed;
+        // mesh.rotation.x+=.01;
         controls.update();
         renderer.render(scene, camera);
         requestAnimationFrame(animate);
     }
 
+    //map number to a new range
+    const map = (value, x1, y1, x2, y2) => (value - x1) * (y2 - x2) / (y1 - x1) + x2;
+
+    //add event listeners
+    addEventListener("mousemove", (e) => {
+        percentageOfMaxSpeed = map(e.clientX, 0, window.innerWidth, -1, 1);
+    });
+
+    addEventListener("resize", (e) => {
+        //update the renderer size and camera aspect ratio to match it
+        let w = window.innerWidth;
+        let h = window.innerHeight
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    });
+
+
+    //start it up
     init();
 </script>
-    <footer>Charles Brandt &copy;2024</footer>
+<footer>You can change the spin by moving right or left.</br>&copy; Charles Brandt</footer>
 </body>
 </html>
