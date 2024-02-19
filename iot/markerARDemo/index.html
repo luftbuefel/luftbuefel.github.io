@@ -42,7 +42,7 @@
 		}
 	</script>
 		<div id="instructions"><b>To see the AR in action take a picture of this marker symbol (with the black border) with your phone. Then show that image to the webcam.</b>
-			<img src="/assets/pattern-symbol2.png" height="300px" alt="tracking symbol">
+			<img src="./assets/pattern-symbol2.png" height="300px" alt="tracking symbol">
 			</br><a href="https://jeromeetienne.github.io/AR.js/three.js/examples/marker-training/examples/generator.html" target="_blank">Make your own marker images here.</a>
 			<button onclick=toggleArt() hidden>Change art</button>
 		</div>
@@ -54,12 +54,12 @@
             <a-marker
                 id="animated-marker"
                 type="pattern"
-                url="assets/pattern-symbol2.patt"
+                url="./assets/pattern-symbol2.patt"
             >
-				<!--<a-entity gltf-model=”url(assets/dog.gltf)”></a-entity>-->
+				<!--<a-entity gltf-model=”url(./assets/dog.gltf)”></a-entity>-->
                 <a-image 
 					id="2dImage"
-                    src="assets/chickenBucket.jfif"
+                    src="./assets/chickenBucket.jfif"
                     scale="1 1 1"
                     class="clickable"
                     rotation="-90 0 0"
