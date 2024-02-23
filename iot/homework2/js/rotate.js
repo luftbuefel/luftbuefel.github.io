@@ -2,8 +2,12 @@ AFRAME.registerComponent('click-rotate', {
     init: function () {
         let el = this.el;
         let origRotation = el.getAttribute('rotation');
+        let rotating = false;
         this.startRotation = function (e) {
-            console.log(origRotation);
+            if(rotating){
+                return;
+            }
+            rotating = true;
             let params = {
                 property: "rotation",
                 to: `${360} ${origRotation.x} ${origRotation.z}`,
