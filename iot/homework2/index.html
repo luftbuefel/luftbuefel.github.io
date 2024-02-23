@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="./js/rotate.js"></script>
+    <script src="./js/colorChange.js"></script>
+    <script src="./js/reposition.js"></script>
+</head>
+<body>
+<script type="application/javascript">
+    function updateSphere(e) {
+        let ball = document.getElementById("ball");
+        if (ball.y >= 3) {
+            ball.y = 1.25
+        } else {
+            ball.y = 3;
+        }
+    }
+
+</script>
+<a-scene cursor="rayOrigin:mouse">
+    <a-assets>
+        <a-assets-item id="cobble" src="/assets/cobble.jpg"></a-assets-item>
+    </a-assets>
+    <a-sky color="#87CEEB"></a-sky>
+    <a-entity id="dolly">
+        <a-entity camera position="0 2 0" look-controls wasd-controls>
+<!--            <a-cursor id="cursor" raycaster ></a-cursor>-->
+        </a-entity>
+    </a-entity>
+    <!--<a-box position="0 2 -5" color="FF0000"></a-box>-->
+    <a-sphere position="0 1.25 -5" rotation="0 45 0" color="#F35C82" id="ball" click-color-change click-reposition></a-sphere>
+    <a-cylinder position="1 0.75 -3" rotation="0 0 15" radius="0.4" height="1" color="#FFE1AA" click-rotate></a-cylinder>
+    <a-plane position="0 0 -4" rotation="-90 15 0" width="4" height="4" src="#cobble"></a-plane>
+</a-scene>
+</body>
+</html>
