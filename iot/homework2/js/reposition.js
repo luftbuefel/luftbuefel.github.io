@@ -1,26 +1,29 @@
 AFRAME.registerComponent('click-reposition', {
+    schema: {
+        min: {type: 'number', default: 0},
+        max: {type: 'number', default: 2}
+    },
     init: function () {
         let el = this.el;
-
+        let target = this.data.max;
+        let data = this.data;
+        
         this.reposition = function () {
             let pos = el.getAttribute("position");
-            
-            let newPosAmt = 2;
-            if(pos.y>newPosAmt){
-                newPosAmt *=-1;
+            //flip the target if it has been reached
+            if(pos.y==target){
+                target = target==data.max?data.min:data.max;
             }
-                
             let params = {
                 property: 'position',
                 to: {
                     x: pos.x,
-                    y: pos.y+newPosAmt,
+                    y: target,
                     z: pos.z
                 },
                 dur: 2000,
                 easing: 'easeInOutSine'
             };
-            //alert(newPosAmt);
             el.setAttribute('animation', params);
         };
         this.el.addEventListener('click', this.reposition);
