@@ -31,6 +31,7 @@
 <button onclick="relativeOrientationDemo()">Test</button>
 <div id="relativeOrientation"></div>
 <script>
+    //accelerometer sensor
     function accelerometerDemo() {
         let accelDiv = document.getElementById("accelerometer");
 
@@ -48,7 +49,6 @@
         });
         sensor.start();
     }
-
 
     //ambientLight sensor
     function ambientLightDemo() {
@@ -70,14 +70,37 @@
 
         let gravitySensor = new GravitySensor({frequency: 60});
         gravitySensor.addEventListener("reading", (e) => {
-            gravityDiv.innerHTML = `Gravity along the X-axis ${gravitySensor.x}`;
-            gravityDiv.innerHTML += `Gravity along the Y-axis ${gravitySensor.y}`;
-            gravityDiv.innerHTML += `Gravity along the Z-axis ${gravitySensor.z}`;
+            gravityDiv.innerHTML="";
+            if(findDown(gravitySensor)){
+                gravityDiv.innerHTML+=`This is sitting on the ${findDown(gravitySensor)}.`;
+            }
+            gravityDiv.innerHTML += `Gravity<br>x: ${gravitySensor.x}<br>y: ${gravitySensor.y}<br>z: ${gravitySensor.z}`;
         });
         gravitySensor.addEventListener("error", (event) => {
             gravityDiv.innerHTML = "Gravity sensor is not available. " + event.error.name + " " + event.error.message;
         });
         gravitySensor.start();
+    }
+    
+    function findDown(gravitySensor){
+        if(gravitySensor.x>=9.7){
+            return "left side";
+        }
+        if(gravitySensor.x<=-9.7){
+            return "right side";
+        }
+        if(gravitySensor.y>=9.7){
+            return "bottom side";
+        }
+        if(gravitySensor.y<=-9.7){
+            return "top side";
+        }
+        if(gravitySensor.z>=9.7){
+            return "back";
+        }
+        if(gravitySensor.z<=-9.7){
+            return "front";
+        }
     }
 
     //gyroscope sensor
@@ -86,9 +109,33 @@
 
         let gyroscope = new Gyroscope({frequency: 60});
         gyroscope.addEventListener("reading", (e) => {
-            gyroscopeDiv.innerHTML = `Angular velocity x: ${gyroscope.x} y: ${gyroscope.y} z: ${gyroscope.z}`;
+            gyroscopeDiv.innerHTML = `Angular velocity<br>x: ${gyroscope.x}<br>y: ${gyroscope.y}<br>z: ${gyroscope.z}`;
         });     
         gyroscope.start();
+    }
+    
+    //linear acceleration sensor
+    function linearAccelerationDemo(){
+        let linearAccelerationDiv = document.getElementById("linearAcceleration");
+        linearAccelerationDiv.innerHTML="not implemented yet";
+    }
+    
+    //magnetometer sensor
+    function magnetometerDemo(){
+        let magnetometerDiv = document.getElementById("magnetometer");
+        magnetometerDiv.innerHTML="not implemented yet";
+    }
+    
+    //orientation sensor
+    function orientationDemo(){
+        let orientationDiv = document.getElementById("orientation");
+        orientationDiv.innerHTML="not implemented yet";
+    }
+    
+    //relative orientation sensor
+    function relativeOrientationDemo(){
+        let relativeOrientationDiv = document.getElementById("relativeOrientation");
+        relativeOrientationDiv.innerHTML="not implemented yet";
     }
 </script>
 </body>
