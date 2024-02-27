@@ -4,19 +4,37 @@
 </head>
 <body>
 <h1>Sensor Usage:</h1>
-<div id="absoluteOrientation"><h3>Absolute Orientation</h3></div>
-<div id="accelerometer"><h3>Accelerometer</h3><button onclick="accelerometerDemo()">Test</button> </div>
-<div id="ambientLight"><h3>Ambient Light</h3><<button onclick="ambientLightDemo()">Test</button>/div>
-<div id="gravity"><h3>Gravity</h3></div>
-<div id="gyroscope"><h3>Gyroscope</h3></div>
-<div id="linearAcceleration"><h3>Linear Acceleration</h3></div>
-<div id="magnetometer"><h3>Magnetometer</h3></div>
-<div id="orientation"><h3>Orientation</h3></div>
-<div id="relativeOrientation"><h3>Relative Orientation</h3></div>
+<h3>Absolute Orientation</h3>
+<div id="absoluteOrientation"></div>
+<h3>Accelerometer</h3>
+<button onclick="accelerometerDemo()">Test</button>
+<div id="accelerometer"></div>
+<h3>Ambient Light</h3>
+<button onclick="ambientLightDemo()">Test</button>
+<div id="ambientLight"></div>
+<h3>Gravity</h3>
+<button onclick="gravityDemo()">Test</button>
+<div id="gravity"></div>
+<h3>Gyroscope</h3>
+<button onclick="gyroscopeDemo()">Test</button>
+<div id="gyroscope"></div>
+<h3>Linear Acceleration</h3>
+<button onclick="linearAccelerationDemo()">Test</button>
+<div id="linearAcceleration"></div>
+<h3>Magnetometer</h3>
+<button onclick="magnetometerDemo()">Test</button>
+<div id="magnetometer"></div>
+<h3>Orientation</h3>
+<button onclick="orientationDemo()">Test</button>
+<div id="orientation"></div>
+<h3>Relative Orientation</h3>
+<button onclick="relativeOrientationDemo()">Test</button>
+<div id="relativeOrientation"></div>
 <script>
-    function accelerometerDemo(){
-        const options = { frequency: 60, referenceFrame: "device" };
+    function accelerometerDemo() {
+        const options = {frequency: 60, referenceFrame: "device"};
         const sensor = new AbsoluteOrientationSensor(options);
+        let accelDiv = document.getElementById("accelerometer");
 
         sensor.addEventListener("reading", () => {
             // model is a Three.js object instantiated elsewhere.
@@ -24,7 +42,7 @@
         });
         sensor.addEventListener("error", (error) => {
             if (event.error.name === "NotReadableError") {
-                console.log("Sensor is not available.");
+                accelDiv.innerHTML = " Accelerometer is not available."
             }
         });
         sensor.start();
@@ -42,39 +60,56 @@
         acl.start();*/
 
     }
-    
-   
+
+
     //ambientLight sensor
-    function ambientLightDemo(){
-        let ambientLightText = document.getElementById("ambientLight");
+    function ambientLightDemo() {
+        let ambientLightDiv = document.getElementById("ambientLight");
         if ("AmbientLightSensor" in window) {
             const sensor = new AmbientLightSensor();
             sensor.addEventListener("reading", (event) => {
                 // console.log("Current light level:", sensor.illuminance);
-                ambientLightText.innerHTML = "Current light level:" + sensor.illuminance;
+                ambientLightDiv.innerHTML += "Current light level:" + sensor.illuminance;
             });
             sensor.addEventListener("error", (event) => {
                 // console.log(event.error.name, event.error.message);
-                ambientLightText.innerHTML = event.error.name + " " + event.error.message;
+                ambientLightDiv.innerHTML = event.error.name + " " + event.error.message;
             });
             sensor.start();
-        }        
+        }
     }
 
+    /*
+        const sensor = new AbsoluteOrientationSensor();
+        Promise.all([
+            navigator.permissions.query({name: "accelerometer"}),
+            navigator.permissions.query({name: "magnetometer"}),
+            navigator.permissions.query({name: "gyroscope"}),
+        ]).then((results) => {
+            if (results.every((result) => result.state === "granted")) {
+                sensor.start();
+                // …
+            } else {
+                console.log("No permissions to use AbsoluteOrientationSensor.");
+            }
+        });*/
 
-    const sensor = new AbsoluteOrientationSensor();
-    Promise.all([
-        navigator.permissions.query({name: "accelerometer"}),
-        navigator.permissions.query({name: "magnetometer"}),
-        navigator.permissions.query({name: "gyroscope"}),
-    ]).then((results) => {
-        if (results.every((result) => result.state === "granted")) {
-            sensor.start();
-            // …
-        } else {
-            console.log("No permissions to use AbsoluteOrientationSensor.");
-        }
-    });
+    //gravity sensor
+    function gravityDemo() {
+        let gravityDiv = document.getElementById("gravity");
+        let gravitySensor = new GravitySensor({frequency: 60});
+
+        gravitySensor.addEventListener("reading", (e) => {
+            gravityDiv.innerHTML = `Gravity along the X-axis ${gravitySensor.x}`;
+            gravityDiv.innerHTML += `Gravity along the Y-axis ${gravitySensor.y}`;
+            gravityDiv.innerHTML += `Gravity along the Z-axis ${gravitySensor.z}`;
+            // console.log(`Gravity along the X-axis ${gravitySensor.x}`);
+            // console.log(`Gravity along the Y-axis ${gravitySensor.y}`);
+            // console.log(`Gravity along the Z-axis ${gravitySensor.z}`);
+        });
+
+        gravitySensor.start();
+    }
 </script>
 </body>
 </html>
