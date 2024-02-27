@@ -4,43 +4,69 @@
 </head>
 <body>
 <h1>Sensor Usage:</h1>
-<div id="accelerometer"></div>
-<div id="ambientLight"></div>
+<div id="absoluteOrientation"><h3>Absolute Orientation</h3></div>
+<div id="accelerometer"><h3>Accelerometer</h3><button onclick="accelerometerDemo()">Test</button> </div>
+<div id="ambientLight"><h3>Ambient Light</h3><<button onclick="ambientLightDemo()">Test</button>/div>
+<div id="gravity"><h3>Gravity</h3></div>
+<div id="gyroscope"><h3>Gyroscope</h3></div>
+<div id="linearAcceleration"><h3>Linear Acceleration</h3></div>
+<div id="magnetometer"><h3>Magnetometer</h3></div>
+<div id="orientation"><h3>Orientation</h3></div>
+<div id="relativeOrientation"><h3>Relative Orientation</h3></div>
 <script>
-    //accelerometer
-    let accelerometerText = document.getElementById("accelerometer");
-    const acl = new Accelerometer({frequency: 60});
-    acl.addEventListener("reading", () => {
-        console.log(`Acceleration along the X-axis ${acl.x}`);
-        console.log(`Acceleration along the Y-axis ${acl.y}`);
-        console.log(`Acceleration along the Z-axis ${acl.z}`);
-        accelerometerText.innerHTML = `Acceleration along the X-axis ${acl.x} <br>Acceleration along the Y-axis ${acl.y} \n Acceleration along the Z-axis ${acl.z}`;
-    });
+    function accelerometerDemo(){
+        const options = { frequency: 60, referenceFrame: "device" };
+        const sensor = new AbsoluteOrientationSensor(options);
 
-    acl.start();
-
-    //ambientLight sensor
-    let ambientLightText = document.getElementById("ambientLight");
-    if ("AmbientLightSensor" in window) {
-        const sensor = new AmbientLightSensor();
-        sensor.addEventListener("reading", (event) => {
-            // console.log("Current light level:", sensor.illuminance);
-            ambientLightText.innerHTML = "Current light level:"+ sensor.illuminance;
+        sensor.addEventListener("reading", () => {
+            // model is a Three.js object instantiated elsewhere.
+            model.quaternion.fromArray(sensor.quaternion).inverse();
         });
-        sensor.addEventListener("error", (event) => {
-            // console.log(event.error.name, event.error.message);
-            ambientLightText.innerHTML = event.error.name+" "+ event.error.message;
+        sensor.addEventListener("error", (error) => {
+            if (event.error.name === "NotReadableError") {
+                console.log("Sensor is not available.");
+            }
         });
         sensor.start();
-    }
 
+        /*//accelerometer
+        let accelerometerText = document.getElementById("accelerometer");
+        const acl = new Accelerometer({frequency: 60});
+        acl.addEventListener("reading", () => {
+            console.log(`Acceleration along the X-axis ${acl.x}`);
+            console.log(`Acceleration along the Y-axis ${acl.y}`);
+            console.log(`Acceleration along the Z-axis ${acl.z}`);
+            accelerometerText.innerHTML = `Acceleration along the X-axis ${acl.x} <br>Acceleration along the Y-axis ${acl.y} \n Acceleration along the Z-axis ${acl.z}`;
+        });
+
+        acl.start();*/
+
+    }
+    
+   
+    //ambientLight sensor
+    function ambientLightDemo(){
+        let ambientLightText = document.getElementById("ambientLight");
+        if ("AmbientLightSensor" in window) {
+            const sensor = new AmbientLightSensor();
+            sensor.addEventListener("reading", (event) => {
+                // console.log("Current light level:", sensor.illuminance);
+                ambientLightText.innerHTML = "Current light level:" + sensor.illuminance;
+            });
+            sensor.addEventListener("error", (event) => {
+                // console.log(event.error.name, event.error.message);
+                ambientLightText.innerHTML = event.error.name + " " + event.error.message;
+            });
+            sensor.start();
+        }        
+    }
 
 
     const sensor = new AbsoluteOrientationSensor();
     Promise.all([
-        navigator.permissions.query({ name: "accelerometer" }),
-        navigator.permissions.query({ name: "magnetometer" }),
-        navigator.permissions.query({ name: "gyroscope" }),
+        navigator.permissions.query({name: "accelerometer"}),
+        navigator.permissions.query({name: "magnetometer"}),
+        navigator.permissions.query({name: "gyroscope"}),
     ]).then((results) => {
         if (results.every((result) => result.state === "granted")) {
             sensor.start();
@@ -50,3 +76,5 @@
         }
     });
 </script>
+</body>
+</html>
