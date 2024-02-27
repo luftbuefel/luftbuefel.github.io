@@ -32,83 +32,63 @@
 <div id="relativeOrientation"></div>
 <script>
     function accelerometerDemo() {
-        const options = {frequency: 60, referenceFrame: "device"};
-        const sensor = new AbsoluteOrientationSensor(options);
         let accelDiv = document.getElementById("accelerometer");
 
+        let options = {frequency: 60, referenceFrame: "device"};
+        let sensor = new AbsoluteOrientationSensor(options);
         sensor.addEventListener("reading", () => {
             // model is a Three.js object instantiated elsewhere.
             model.quaternion.fromArray(sensor.quaternion).inverse();
+            accelDiv.innerHTML = sensor.quaternion.toString();
         });
-        sensor.addEventListener("error", (error) => {
+        sensor.addEventListener("error", (event) => {
             if (event.error.name === "NotReadableError") {
-                accelDiv.innerHTML = " Accelerometer is not available."
+                accelDiv.innerHTML = " Accelerometer is not available. " + event.error.name + " " + event.error.message;
             }
         });
         sensor.start();
-
-        /*//accelerometer
-        let accelerometerText = document.getElementById("accelerometer");
-        const acl = new Accelerometer({frequency: 60});
-        acl.addEventListener("reading", () => {
-            console.log(`Acceleration along the X-axis ${acl.x}`);
-            console.log(`Acceleration along the Y-axis ${acl.y}`);
-            console.log(`Acceleration along the Z-axis ${acl.z}`);
-            accelerometerText.innerHTML = `Acceleration along the X-axis ${acl.x} <br>Acceleration along the Y-axis ${acl.y} \n Acceleration along the Z-axis ${acl.z}`;
-        });
-
-        acl.start();*/
-
     }
 
 
     //ambientLight sensor
     function ambientLightDemo() {
         let ambientLightDiv = document.getElementById("ambientLight");
-        if ("AmbientLightSensor" in window) {
-            const sensor = new AmbientLightSensor();
-            sensor.addEventListener("reading", (event) => {
-                // console.log("Current light level:", sensor.illuminance);
-                ambientLightDiv.innerHTML += "Current light level:" + sensor.illuminance;
-            });
-            sensor.addEventListener("error", (event) => {
-                // console.log(event.error.name, event.error.message);
-                ambientLightDiv.innerHTML = event.error.name + " " + event.error.message;
-            });
-            sensor.start();
-        }
-    }
 
-    /*
-        const sensor = new AbsoluteOrientationSensor();
-        Promise.all([
-            navigator.permissions.query({name: "accelerometer"}),
-            navigator.permissions.query({name: "magnetometer"}),
-            navigator.permissions.query({name: "gyroscope"}),
-        ]).then((results) => {
-            if (results.every((result) => result.state === "granted")) {
-                sensor.start();
-                // …
-            } else {
-                console.log("No permissions to use AbsoluteOrientationSensor.");
-            }
-        });*/
+        let sensor = new AmbientLightSensor();
+        sensor.addEventListener("reading", (event) => {
+            ambientLightDiv.innerHTML = "Current light level:" + sensor.illuminance;
+        });
+        sensor.addEventListener("error", (event) => {
+            ambientLightDiv.innerHTML = "Ambient light sensor is not available. " + event.error.name + " " + event.error.message;
+        });
+        sensor.start();
+    }
 
     //gravity sensor
     function gravityDemo() {
         let gravityDiv = document.getElementById("gravity");
-        let gravitySensor = new GravitySensor({frequency: 60});
 
+        let gravitySensor = new GravitySensor({frequency: 60});
         gravitySensor.addEventListener("reading", (e) => {
             gravityDiv.innerHTML = `Gravity along the X-axis ${gravitySensor.x}`;
             gravityDiv.innerHTML += `Gravity along the Y-axis ${gravitySensor.y}`;
             gravityDiv.innerHTML += `Gravity along the Z-axis ${gravitySensor.z}`;
-            // console.log(`Gravity along the X-axis ${gravitySensor.x}`);
-            // console.log(`Gravity along the Y-axis ${gravitySensor.y}`);
-            // console.log(`Gravity along the Z-axis ${gravitySensor.z}`);
         });
-
+        gravitySensor.addEventListener("error", (event) => {
+            gravityDiv.innerHTML = "Gravity sensor is not available. " + event.error.name + " " + event.error.message;
+        });
         gravitySensor.start();
+    }
+
+    //gyroscope sensor
+    function gyroscopeDemo() {
+        let gyroscopeDiv = document.getElementById("gyroscope");
+
+        let gyroscope = new Gyroscope({frequency: 60});
+        gyroscope.addEventListener("reading", (e) => {
+            gyroscopeDiv.innerHTML = `Angular velocity x: ${gyroscope.x} y: ${gyroscope.y} z: ${gyroscope.z}`;
+        });     
+        gyroscope.start();
     }
 </script>
 </body>
