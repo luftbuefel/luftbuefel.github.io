@@ -140,7 +140,7 @@
     function magnetometerDemo(){
         let magnetometerDiv = document.getElementById("magnetometer");
         magnetometerDiv.innerHTML ="attempting to connect";
-        
+
         let magSensor = new Magnetometer({ frequency: 60 });
         magSensor.addEventListener("reading", (e) => {
             magnetometerDiv.innerHTML = `Magnetic field: <br>x: ${magSensor.x} y: ${magSensor.y} z: ${magSensor.z}`;
