@@ -34,7 +34,7 @@
     //accelerometer sensor
     function accelerometerDemo() {
         let accelDiv = document.getElementById("accelerometer");
-        accelDiv.innerHTML ="attempting to connect";
+        accelDiv.innerHTML = "attempting to connect";
 
         let options = {frequency: 60, referenceFrame: "device"};
         let sensor = new AbsoluteOrientationSensor(options);
@@ -54,7 +54,7 @@
     //ambientLight sensor
     function ambientLightDemo() {
         let ambientLightDiv = document.getElementById("ambientLight");
-        ambientLightDiv.innerHTML ="attempting to connect";
+        ambientLightDiv.innerHTML = "attempting to connect";
 
         let sensor = new AmbientLightSensor();
         sensor.addEventListener("reading", (event) => {
@@ -69,13 +69,13 @@
     //gravity sensor
     function gravityDemo() {
         let gravityDiv = document.getElementById("gravity");
-        gravityDiv.innerHTML ="attempting to connect";
+        gravityDiv.innerHTML = "attempting to connect";
 
         let gravitySensor = new GravitySensor({frequency: 60});
         gravitySensor.addEventListener("reading", (e) => {
-            gravityDiv.innerHTML="";
-            if(findDown(gravitySensor)){
-                gravityDiv.innerHTML+=`This is sitting on the ${findDown(gravitySensor)}.`;
+            gravityDiv.innerHTML = "";
+            if (findDown(gravitySensor)) {
+                gravityDiv.innerHTML += `This is sitting on the ${findDown(gravitySensor)}.`;
             }
             gravityDiv.innerHTML += `Gravity<br>x: ${gravitySensor.x}<br>y: ${gravitySensor.y}<br>z: ${gravitySensor.z}`;
         });
@@ -84,24 +84,24 @@
         });
         gravitySensor.start();
     }
-    
-    function findDown(gravitySensor){
-        if(gravitySensor.x>=9.7){
+
+    function findDown(gravitySensor) {
+        if (gravitySensor.x >= 9.7) {
             return "left side";
         }
-        if(gravitySensor.x<=-9.7){
+        if (gravitySensor.x <= -9.7) {
             return "right side";
         }
-        if(gravitySensor.y>=9.7){
+        if (gravitySensor.y >= 9.7) {
             return "bottom side";
         }
-        if(gravitySensor.y<=-9.7){
+        if (gravitySensor.y <= -9.7) {
             return "top side";
         }
-        if(gravitySensor.z>=9.7){
+        if (gravitySensor.z >= 9.7) {
             return "back";
         }
-        if(gravitySensor.z<=-9.7){
+        if (gravitySensor.z <= -9.7) {
             return "front";
         }
     }
@@ -109,7 +109,7 @@
     //gyroscope sensor
     function gyroscopeDemo() {
         let gyroscopeDiv = document.getElementById("gyroscope");
-        gyroscopeDiv.innerHTML ="attempting to connect";
+        gyroscopeDiv.innerHTML = "attempting to connect";
 
         let gyroscope = new Gyroscope({frequency: 60});
         gyroscope.addEventListener("reading", (e) => {
@@ -120,74 +120,74 @@
         });
         gyroscope.start();
     }
-    
+
     //linear acceleration sensor
-    function linearAccelerationDemo(){
+    function linearAccelerationDemo() {
         let linearAccelerationDiv = document.getElementById("linearAcceleration");
-        linearAccelerationDiv.innerHTML ="attempting to connect";
-        
-        let laSensor = new LinearAccelerationSensor({ frequency: 60 });
+        linearAccelerationDiv.innerHTML = "attempting to connect";
+
+        let laSensor = new LinearAccelerationSensor({frequency: 60});
         laSensor.addEventListener("reading", (e) => {
-            linearAccelerationDiv.innerHTML=`Linear acceleration:<br>x: ${laSensor.x} y: ${laSensor.y} z: ${laSensor.z}`;
+            linearAccelerationDiv.innerHTML = `Linear acceleration:<br>x: ${laSensor.x}<br>y: ${laSensor.y}<br>z: ${laSensor.z}`;
         });
         laSensor.addEventListener("error", (event) => {
             linearAccelerationDiv.innerHTML = "Linear acceleration sensor is not available. " + event.error.name + " " + event.error.message;
         });
         laSensor.start();
     }
-    
+
     //magnetometer sensor
-    function magnetometerDemo(){
+    function magnetometerDemo() {
         let magnetometerDiv = document.getElementById("magnetometer");
         magnetometerDiv.innerHTML ="attempting to connect";
-
-        let magSensor = new Magnetometer({ frequency: 60 });
+        
+        let magSensor = new Magnetometer({frequency: 60});
         magSensor.addEventListener("reading", (e) => {
-            magnetometerDiv.innerHTML = `Magnetic field: <br>x: ${magSensor.x} y: ${magSensor.y} z: ${magSensor.z}`;
+            magnetometerDiv.innerHTML = `Magnetic field:<br>x: ${magSensor.x}<br>y: ${magSensor.y}<br>z: ${magSensor.z}`;
         });
         magSensor.addEventListener("error", (event) => {
             magnetometerDiv.innerHTML = "Magnetic field sensor is not available. " + event.error.name + " " + event.error.message;
         });
         magSensor.start();
     }
-    
-    //orientation sensor
-    function orientationDemo(){
-        let orientationDiv = document.getElementById("orientation");
-        orientationDiv.innerHTML="attempting to connect";
 
-        const options = { frequency: 60, referenceFrame: "device" };
+    //orientation sensor
+    function orientationDemo() {
+        let orientationDiv = document.getElementById("orientation");
+        orientationDiv.innerHTML = "attempting to connect";
+
+        const options = {frequency: 60, referenceFrame: "device"};
         const sensor = new AbsoluteOrientationSensor(options);
 
         sensor.addEventListener("reading", () => {
             // model is a Three.js object instantiated elsewhere.
             // model.quaternion.fromArray(sensor.quaternion).inverse();
-            orientationDiv.innerHTML = sensor.quaternion.toString();
+            orientationDiv.innerHTML =  `Orientation sensor:<br>x: ${sensor.quaternion.x}<br>y: ${sensor.quaternion.y}<br>z: ${sensor.quaternion.z}`;
         });
-        sensor.addEventListener("error", (error) => {
+        sensor.addEventListener("error", (event) => {
             if (event.error.name === "NotReadableError") {
-                orientationDiv.innerHTML = "Sensor is not available.";
+                orientationDiv.innerHTML = "Orientation sensor is not available.";
             }
         });
         sensor.start();
     }
-    
-    //relative orientation sensor
-    function relativeOrientationDemo(){
-        let relativeOrientationDiv = document.getElementById("relativeOrientation");
-        relativeOrientationDiv.innerHTML="attempting to connect";
 
-        const options = { frequency: 60, referenceFrame: "device" };
+    //relative orientation sensor
+    function relativeOrientationDemo() {
+        let relativeOrientationDiv = document.getElementById("relativeOrientation");
+        relativeOrientationDiv.innerHTML = "attempting to connect";
+
+        const options = {frequency: 60, referenceFrame: "device"};
         const sensor = new RelativeOrientationSensor(options);
 
         sensor.addEventListener("reading", () => {
             // model is a Three.js object instantiated elsewhere.
             // model.quaternion.fromArray(sensor.quaternion).inverse();
-            relativeOrientationDiv.innerHTML = sensor.quaternion.toString();
+            relativeOrientationDiv.innerHTML = `Relative Orientation sensor:<br>x: ${sensor.quaternion.x}<br>y: ${sensor.quaternion.y}<br>z: ${sensor.quaternion.z}`;
         });
-        sensor.addEventListener("error", (error) => {
+        sensor.addEventListener("error", (event) => {
             if (event.error.name === "NotReadableError") {
-                relativeOrientationDiv.innerHTML = "Sensor is not available.";
+                relativeOrientationDiv.innerHTML = "Relative Orientation sensor is not available.";
             }
         });
         sensor.start();
