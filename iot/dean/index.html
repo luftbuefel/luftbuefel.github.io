@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Geolocation Puzzle</title>
+        <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script> 
+        <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+        <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    </head>
+    <body>
+        <a-scene vr-mode-ui="enabled: false"
+                 embedded
+                 arjs="sourceType: webcam; debugUIEnabled:false;">
+        <a-assets>
+            <img src="./assets/markerIrvington.png" id="viking">    
+            <img src="./assets/brickNormal.png" id="brick">    
+        </a-assets>
+        <a-entity gltf-model="./assets/farmDog.glb" 
+                  position="0 2 -5"                  
+                  rotation="0 -90 0"></a-entity>
+        <!--<a-box color="rgb(156, 133, 95)"
+               src="#viking"
+               repeat ="2 2"
+               normal-map="#brick"
+               normal-texture-repeat="2 2"
+               roughness="1"
+               position=".08 1.104 -3.674"
+               gps-entity-place="latitude: 37.792628; longitude:-122.405957;"
+               >
+        </a-box>    
+            
+        <a-plane src="#viking"
+                 position=".08 1.104 -2.674"
+                 side="double"
+                 look-at="[gps-camera]"
+                 >
+        </a-plane>    
+            
+            
+            
+        <a-sphere color="rgb(156, 133, 95)"
+               src="#viking"
+               repeat ="2 2"
+               roughness="0"
+               gps-entity-place="latitude: 37.784624; longitude:-122.427646;">
+        </a-sphere>
+        -->
+            <a-camera gps-camera rotation-reader></a-camera>
+        </a-scene>
+        
+    </body>
+</html>
