@@ -36,6 +36,7 @@ AFRAME.registerComponent("camera-rotation", {
     tick: function (time, timeDelta) {        
         let cam = document.getElementById("cam");
         let el = this.el;
-        el.setAttribute("value", "rotation: "+cam.getAttribute("rotation").z);
+        let rotate = cam.getAttribute("rotation");
+        el.setAttribute("value", "rotation: "+rotate.x+", "+rotate.y+", "+rotate.z);
     }
 });
