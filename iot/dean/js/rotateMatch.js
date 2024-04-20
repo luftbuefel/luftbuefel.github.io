@@ -17,3 +17,25 @@ AFRAME.registerComponent("track-rotation", {
         el.setAttribute("value", "rotation: "+el.getAttribute("rotation").z);
     }
 });
+
+
+AFRAME.registerComponent("camera-rotation", {
+    
+    schema: {
+        intialColor: { type: "color", default: "" },
+        onClick: { type: "color", default: "" }
+    },
+    
+    init: function () {
+        let el = this.el;
+        let data = this.data;
+        el.setAttribute("value", "charles");
+    
+    },    
+    
+    tick: function (time, timeDelta) {        
+        let cam = document.getElementById("cam");
+        let el = this.el;
+        el.setAttribute("value", "rotation: "+cam.getAttribute("rotation").z);
+    }
+});
