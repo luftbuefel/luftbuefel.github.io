@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jataka Demo</title>
+
+    <link rel="stylesheet" href="style.css" />
+    <!-- include A-Frame -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"
+      defer
+    ></script>
+    <script src="rabbit.js"></script>
+  </head>
+
+  <body>
+    
+    <script>
+      //hide the message overlay to play the game
+      function hideMessage(callback = null) {
+        document.querySelector("#intro").style.display = "none";
+        //run a callback function if there is one
+        if (callback) {
+          callback();
+        }
+      }
+    </script>
+    
+    <!--- Popup messages -->
+    <div class="overlay" id="intro">
+      <div class="gameMessage">
+        <h3>Augmented Reality: The Rabbit Who Overcame Fear</h3>
+        <p>
+          To play, hold up pages from the book to your device. When a page is
+          recognized, virtual items will appear. This demo was created by
+          Charles Brandt.
+          <br />
+          Start by holding up the book's cover to the camera.
+        </p>
+        <button id="closeOverlayBtn" onclick="hideMessage()">Play</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="instructions">
+      <div class="gameMessage">
+        <span class="nobr">1. <img
+          alt="image of the book cover"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/cover.png?v=1740099185928"
+        /></span>
+         <span class="nobr">2. <img
+          alt="backside of a white rabbit by a mango tree"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/rabbitMango.png?v=1740099163222"
+        /></span>
+         <span class="nobr">3. <img
+          alt="many rabbits running in a forest"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/rabbitRun.png?v=1740099168844"
+        /></span>
+        <br class="smallScreen">
+         <span class="nobr">4. <img
+          alt="lion roaring"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/lionRoar.png?v=1740099165834"
+        /></span>
+         <span class="nobr">5. <img
+          alt="rabbit with lion"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/lionRabbit256.png?v=1740419584729"
+        /></span>
+        <ol>
+          <li>Cover - Brings up instruction window</li>
+          <li>
+            "Suddenly the little white rabbit..." This page will read its
+            contents to you in a computer generated voice. Press the talking head button to hear the entire text and the word buttons for individual words.
+          </li>
+          <li>
+            "More and more rabbits..." The rabbit running page will show an
+            endless stream of rabbits moving across the page.
+          </li>
+          <li>
+            "A lion heard the thunder..." You may tap on the lion to make it
+            roar.
+          </li>
+          <li>
+            "With the rabbit on his back..." You may tap on the mango to play a
+            squish animation.
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <script>
+      const synth = window.speechSynthesis;
+      let say = (message) => {
+        //stop any message currently being spoken
+        synth.cancel()
+        //setup the new message
+        let utterance = new SpeechSynthesisUtterance(message);
+        synth.speak(utterance);
+      };
+      
+      
+      window.onresize = function () {
+        document.querySelector('a-scene').systems["mindar-image-system"].pause()
+        document.querySelector('video').remove();
+        Array.from(document.querySelectorAll('[mindar-image-target]')).forEach((element,index) => {
+        element.components['mindar-image-target'].updateWorldMatrix(null, )
+        });
+        document.querySelector('a-scene').systems["mindar-image-system"]._startVideo()
+      }
+    </script>
+    <div id="reading">
+      <div id="readingBox"></div>
+    </div>
+
+    <a-scene
+      mindar-image="imageTargetSrc: https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/rabbit1.mind?v=1740420987381;"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      xr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      rabbit-book
+    >
+      <!-- define your gltf asset -->
+      <a-assets>
+        <a-asset-item
+          id="mangoArt"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/mango.glb?v=1739411693434"
+        ></a-asset-item>
+        <a-asset-item
+          id="rabbitArt"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/rabbit.glb?v=1739411699991"
+        ></a-asset-item>
+        <a-asset-item
+          id="brownRabbitArt"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/brownRabbit.glb?v=1740162213521"
+        ></a-asset-item>
+        <a-asset-item
+          id="lionArt"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/lion.glb?v=1739919710184"
+        ></a-asset-item>
+        <sound
+          id="roarSound"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/lionRoar.mp3?v=1739817767548"
+        ></sound>
+        <sound
+          id="squishSound"
+          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/squish.mp3?v=1739817770602"
+        ></sound>
+      </a-assets>
+
+      <!--       Mixins -->
+      <a-mixin id="running" scale="1 1 1" rotation="315 90 90"></a-mixin>
+      <a-mixin id="brownRunning" scale="1 1 1" rotation="135 90 90"></a-mixin>
+
+      <!--     Sounds -->
+      <a-sound
+        id="roar"
+        src="#roarSound"
+        autoplay="false"
+        loop="false"
+      ></a-sound>
+      <a-sound
+        id="squish"
+        src="#squishSound"
+        autoplay="false"
+        loop="false"
+      ></a-sound>
+
+      <!-- MindAR tracked entities -->
+
+      <!--       Cover -->
+      <a-entity mindar-image-target="targetIndex: 0" id="cover">
+      </a-entity>
+
+      <!--       Scared Rabbit -->
+      <a-entity mindar-image-target="targetIndex: 1" id="scaredRabbit">
+      </a-entity>
+      
+      <!--       Lion Roaring -->
+      <a-entity mindar-image-target="filterMinCF:0.00001; filterBeta: 10; targetIndex: 3">
+        <a-gltf-model
+          id="lion"
+          class="clickable"
+          rotation="-12.508814583296132 -145.0815080940514 -17.39958232253284"
+          position="0.25261 -0.07341 0.07051"
+          scale="1.8349 1.8349 1.8349"
+          src="#lionArt"
+        ></a-gltf-model>
+      </a-entity>
+
+      <!--       Rabbits Running -->
+      <a-entity mindar-image-target="targetIndex: 2">
+        <a-gltf-model
+          id="rabbitRun"
+          mixin="running"
+          src="#rabbitArt"
+          animation="property: position; from: 1 4 0; to: -2 -2 0 ; dur: 2003; easing: linear; loop: true;"
+        ></a-gltf-model>
+        <a-gltf-model
+          mixin="brownRunning"
+          src="#brownRabbitArt"
+          animation="property: position; from: 3 4 0; to: -1 -2 0 ; dur: 2053; easing: linear; loop: true;"
+        ></a-gltf-model>
+        <a-gltf-model
+          mixin="running"
+          scale="1 1 1"
+          src="#rabbitArt"
+          animation="property: position; from: 2 4 0; to: 0 -2 0 ; dur: 2551; easing: linear; loop: true;"
+        ></a-gltf-model>
+        <a-gltf-model
+          mixin="brownRunning"
+          scale="1 1 1"
+          src="#brownRabbitArt"
+          animation="property: position; from: 2 4 0; to: -4 -2 0 ; dur: 1283; easing: linear; loop: true;"
+        ></a-gltf-model>
+        <a-gltf-model
+          mixin="running"
+          scale="1 1 1"
+          src="#rabbitArt"
+          animation="property: position; from: 2 4 0; to: -3 -2 0 ; dur: 1499; easing: linear; loop: true;"
+        ></a-gltf-model>
+      </a-entity>
+
+      <a-entity mindar-image-target = "filterMinCF:0.0001; targetIndex: 4" id="squishedMango">
+        <a-gltf-model
+          id="mango"
+          class="clickable"
+          src="#mangoArt"
+        ></a-gltf-model>
+      </a-entity>
+
+      <a-camera
+        position="0 0 0"
+        look-controls="enabled: false"
+        cursor="fuse: false; rayOrigin: mouse;"
+        raycaster="far: ${customFields.libVersion}; objects: .clickable"
+      >
+      </a-camera>
+    </a-scene>
+  </body>
+</html>
