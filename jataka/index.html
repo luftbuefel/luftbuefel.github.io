@@ -96,23 +96,13 @@
         let utterance = new SpeechSynthesisUtterance(message);
         synth.speak(utterance);
       };
-      
-      
-      window.onresize = function () {
-        document.querySelector('a-scene').systems["mindar-image-system"].pause()
-        document.querySelector('video').remove();
-        Array.from(document.querySelectorAll('[mindar-image-target]')).forEach((element,index) => {
-        element.components['mindar-image-target'].updateWorldMatrix(null, )
-        });
-        document.querySelector('a-scene').systems["mindar-image-system"]._startVideo()
-      }
     </script>
     <div id="reading">
       <div id="readingBox"></div>
     </div>
 
     <a-scene
-      mindar-image="imageTargetSrc: https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/rabbit1.mind?v=1740420987381;"
+      mindar-image="imageTargetSrc: art/rabbit.mind;"
       color-space="sRGB"
       renderer="colorManagement: true, physicallyCorrectLights"
       xr-mode-ui="enabled: false"
@@ -123,27 +113,27 @@
       <a-assets>
         <a-asset-item
           id="mangoArt"
-          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/mango.glb?v=1739411693434"
+          src="art/mango.glb"
         ></a-asset-item>
         <a-asset-item
           id="rabbitArt"
-          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/rabbit.glb?v=1739411699991"
+          src="art/rabbit.glb"
         ></a-asset-item>
         <a-asset-item
           id="brownRabbitArt"
-          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/brownRabbit.glb?v=1740162213521"
+          src="art/brownRabbit.glb"
         ></a-asset-item>
         <a-asset-item
           id="lionArt"
-          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/lion.glb?v=1739919710184"
+          src="art/lion.glb"
         ></a-asset-item>
         <sound
           id="roarSound"
-          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/lionRoar.mp3?v=1739817767548"
+          src="art/lionRoar.mp3"
         ></sound>
         <sound
           id="squishSound"
-          src="https://cdn.glitch.global/11905233-4176-456f-bf5e-15343a642bbf/squish.mp3?v=1739817770602"
+          src="art/squish.mp3"
         ></sound>
       </a-assets>
 
