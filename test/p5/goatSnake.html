@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/addons/p5.sound.min.js"></script>
+    <title>Goats hate snakes!</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>Goats hate snakes!</h1>
+    
+    <script defer>
+         class Segment {
+
+            constructor(thickness = 20, length = 5, hue = color(255, 0, 0)) {
+                this.x = 0;
+                this.y = 0;
+                this.angle = 0;
+                this.next = null;
+                this.color = hue;
+                if (length < 1) {
+                    this.length = 1;
+                } else {
+                    this.length = length;
+                }
+
+                if (thickness < 1) {
+                    this.thickness = 1;
+                } else {
+                    this.thickness = thickness;
+                }
+            }
+
+            draw() {
+                strokeWeight(this.thickness);
+                stroke(this.color);
+                push();
+                translate(this.x, this.y);
+                rotate(this.angle);
+                line(0, 0, this.length, 0);
+                pop();
+            }
+
+            drag(newX, newY) {
+                //here is the magic where we tell the segments where to be and how to be angled
+                let distanceX = newX - this.x;
+                let distanceY = newY - this.y;
+                this.angle = atan2(distanceY, distanceX);
+                this.x = newX - cos(this.angle) * this.length;
+                this.y = newY - sin(this.angle) * this.length;
+
+                //if there is a connected segment, tell it to drag as well
+                if (this.next) {
+                    this.next.drag(this.x, this.y);
+                }
+                //putting draw here ensure that you draw from tail to head so the head will always be on the top;
+                this.draw();
+            }
+
+            add() {
+                this.thickness++;
+                //check if there is already a next
+                //if there is not, add one and style it to look nice
+                if (this.next == null) {
+                    let rOffset = round(random(-80, 80));
+                    let gOffset = round(random(-80, 80));
+                    let bOffset = round(random(-80, 80));
+                    let newColor = color(red(this.color) + rOffset, green(this.color) + gOffset, blue(this.color) + bOffset);
+                    this.next = new Segment(this.thickness - 1, this.length + 1, newColor);
+                } else {
+                    //if there is, then pass the command down the chain
+                    this.next.add();
+                }
+            }
+
+            remove() {
+                this.thickness--;
+                if (this.next) {
+                    if (this.next.next == null) {
+                        this.next = null;
+                    } else {
+                        this.next.remove();
+                    }
+                }
+            }
+        }
+        
+        class Head extends Segment {
+            draw() {
+                stroke(this.color);
+                strokeWeight(this.thickness);
+                strokeCap(ROUND);
+                push();
+                translate(this.x, this.y);
+                rotate(this.angle);
+                fill(this.color);
+                let unit = this.thickness / 4;
+                //head shape
+                beginShape();
+                vertex(0, unit);
+                vertex(unit * 2, unit * 2);
+                vertex(unit * 6, unit / 3);
+                vertex(unit * 6, -unit / 3);
+                vertex(unit * 2, -unit * 2);
+                vertex(0, -unit);
+                endShape();
+                //eyes
+                noStroke();
+                fill(255, 255, 0);
+                ellipse(unit * 5, unit * 3, unit, unit);
+                ellipse(unit * 5, -unit * 3, unit, unit);
+                //irises
+                strokeWeight(1);
+                stroke(0);
+                noFill();
+                line((unit * 5) - (unit / 2), unit * 3, (unit * 5) + (unit / 2), unit * 3);
+                line((unit * 5) - (unit / 2), -unit * 3, (unit * 5) + (unit / 2), -unit * 3);
+                pop();
+            }
+        }
+       
+        
+        class Eye {
+            constructor(x, y, target) {
+                this.x = x;
+                this.y = y;
+                this.size = 10;
+                this.iris = Eye.getEyeColor();
+                this.target = target;
+            }
+
+            static getEyeColor() {
+                if (!Eye.color) {
+                    Eye.color = color(random(100), random(255), random(255));
+                }
+                return Eye.color
+            }
+
+            draw() {
+                noStroke();
+                //angle between the target and the center of the eye
+                let angle = Math.atan2(this.y - this.target.y, this.x - this.target.x);
+                let size = this.size;
+                let targetDistance = dist(this.x, this.y, this.target.x, this.target.y);
+                let maxOffset = (size / 2) - (size / 4);
+                //if the distance is less than the size of the eye them move the smaller amount to better follow the mouse
+                maxOffset = (targetDistance > maxOffset) ? maxOffset : targetDistance;
+                let xOffset = -maxOffset * cos(angle);
+                let yOffset = -maxOffset * sin(angle);
+                //white
+                fill(255);
+                ellipse(this.x, this.y, size, size);
+                //iris
+                size *= 0.5;
+                fill(this.iris);
+                ellipse(this.x + xOffset, this.y + yOffset, size, size);
+                //pupil
+                size *= 0.5;
+                fill(0);
+                ellipse(this.x + xOffset, this.y + yOffset, size, size);
+            }
+
+            move() {
+                this.draw();
+            }
+        }
+        
+        let goatBody;
+        let goatJaw;
+        let jawAngle = 0;
+        let jawPivot;
+        let eye;
+        let snake;
+        let snakeTarget;
+        let scream;
+
+        function preload() {
+            goatBody = loadImage("../images/goatBody.png");
+            goatJaw = loadImage("../images/goatJaw.png");
+            scream = loadSound("../audio/goatScream.mp3");
+        }
+
+        function setup() {
+            createCanvas(1000, 1000);
+            goatBody.y = height - goatBody.height;
+            goatBody.x = 0;
+            goatJaw.x = goatBody.x + 362;
+            goatJaw.y = goatBody.y + 231;
+            jawPivot = createVector(427, 819);
+            snake = new Head(10);
+            snake.speed = 10;
+            for (let i = 0; i < 20; i++) {
+                snake.add();
+            }
+            eye = new Eye(401, 708, snake);
+            eyeLocation = createVector(396, 709);
+            // newTarget();
+            cursor("none");
+        }
+
+        // function newTarget() {
+        // 	snakeTarget = createVector(random(0, width), random(0, height));
+        // }
+
+        function draw() {
+            background(100);
+            push();
+            translate(jawPivot.x, jawPivot.y);
+            rotate(jawAngle);
+            translate(goatJaw.x - jawPivot.x, goatJaw.y - jawPivot.y);
+            image(goatJaw, 0, 0);
+            pop();
+            snake.drag(mouseX, mouseY);
+            image(goatBody, goatBody.x, goatBody.y);
+            //the eye gets bigger the closer the mouse is; replace with snake later
+            eye.size = map(dist(eye.x, eye.y, snake.x, snake.y), 150, 500, 35, 25, true);
+            eye.move();
+
+            jawAngle = map(dist(eye.x, eye.y, snake.x, snake.y), 50, 350, PI / 8, 0, true);
+            // print(dist(snake.x, snake.y, jawPivot.x, jawPivot.y));
+            if (jawAngle > PI / 64) {
+                cueScreaming(true);
+            } else {
+                cueScreaming(false);
+            }
+            //if the snake has not reached the target, move towards it
+            // let distance = dist(snake.x, snake.y, mouseX, mouseY);
+            // let distance = dist(snake.x, snake.y, snakeTarget.x, snakeTarget.y);
+
+            // if (distance > snake.speed) {
+            // let angle = Math.atan2(snakeTarget.y - snake.y, snakeTarget.x - snake.x);
+            // let newX = cos(angle) * snake.speed;
+            // let newY = sin(angle) * snake.speed;
+            // snake.drag(snake.x + newX, snake.y + newY);
+            // snake.drag(mouseX, mouseY);
+
+            // } else {
+            // 	newTarget();
+            // }
+            // snake.drag(mouseX, mouseY);
+        }
+
+
+        function cueScreaming(play) {
+            if (scream.isPlaying() && !play) {
+                scream.setVolume(0, 0.08);
+
+            }
+            if (!scream.isPlaying() && play) {
+                // scream.stop();
+                scream.setVolume(1); 
+                scream.play();
+            }
+        }
+        
+    </script>
+</body>
+
+</html>

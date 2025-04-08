@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Whack-a-mole!</title>
+
+    <!-- The website stylesheet -->
+    <link rel="stylesheet" href="./aframe.css" />
+
+    <!-- The website JavaScript files -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+
+    <script>
+        AFRAME.registerComponent("whack-a-mole", {
+          init: function () {
+            let el = this.el;
+
+            this.data.score = 0;
+            //30 sec of gameplay
+            this.data.gameDuration = 30000;
+            this.data.gameRunning = false;
+
+            //save the slots for triggering moles later
+            el.slots = document.querySelectorAll("a-entity[mixin='tiltedToCamera']");
+
+            //get the coal
+            let coal = document.querySelectorAll("a-entity[mixin='coalSettings']");
+
+            //get the gold
+            let gold = document.querySelectorAll("a-entity[mixin='goldSettings']");
+
+            //setup the moles
+            let moles = [...coal, ...gold];
+
+            //create a reference to the moles
+            el.moles = moles;
+            for (let mole of moles) {
+              mole.addEventListener("click", (e) => {
+                //check if the mole is in play, if not then don't do anything
+                if (!e.target.inPlay) {
+                  return;
+                }
+                let mixin = e.target.getAttribute("mixin");
+                if (mixin == "goldSettings") {
+                  this.data.score -= 1;
+                } else if (mixin == "coalSettings") {
+                  this.data.score += 1;
+                }
+                //hit the mole to trigger an immediate return animation
+                e.target.hit();
+                //update the score
+                let score = document.querySelector("#whackAMoleScore");
+                score.innerHTML = "Score: " + this.data.score;
+              });
+            }
+
+            el.triggerMole = () => {
+              //choose a slot that is not currently active
+              let slot = Math.floor(Math.random() * el.slots.length);
+              slot = el.slots[slot];
+              while (slot.getAttribute("active") == "true") {
+                slot = Math.floor(Math.random() * el.slots.length);
+                slot = el.slots[slot];
+              }
+              //set slot to active
+              slot.setAttribute("active", "true");
+              //pick a gold or coal to have popup
+              let mole = Math.floor(Math.random() * 2) > 0 ? slot.querySelector("a-entity[mixin='goldSettings']") : slot.querySelector("a-entity[mixin='coalSettings']");
+
+              mole.trigger();
+
+              //choose a random interval for the mole to popup
+              el.triggerInterval = Math.floor(Math.random() * 3000) + 1000;
+              el.lastMole = Date.now();
+            };
+
+            (el.gameOver = () => {
+              this.data.gameRunning = false;
+              //change the sounds
+              //stop the background music
+              let bkgdMusic = document.querySelector("#bkgdMusic");
+              bkgdMusic.components["sound"].stopSound();
+              //play the fanfare
+              let fanfare = document.querySelector("#fanfare");
+              fanfare.components["sound"].playSound();
+              let ecoMessage =
+                "Did you know that Across the US the geothermal workforce added 1,000 jobs in 2022, growing by 5.0%?\n\nElectricity generated from geothermal plants is projected to increase from 17 billion to 37.2 billion kWh by 2050. (US Department of Energy).";
+
+              //turn on the gameover screen; this code is in index.html
+              showMessage(
+                "Game Over",
+                `You scored ${this.data.score}.\n\n${ecoMessage}`,
+                "Play again",
+                () => {
+                  //maybe move some of this to the update function that triggers when the data changes
+                  el.reset();
+                  startGame();
+                }
+              );
+            }),
+              //reset is used to setup a new game; that's why it is seperate from init
+              (this.el.reset = () => {
+                //reset the score
+                this.data.score = 0;
+                let score = document.querySelector("#whackAMoleScore");
+                score.innerHTML = "Score: 0";
+              });
+
+            //setup a new game
+            this.el.reset();
+          },
+
+          startGame: function () {
+            //this gets called by the instructions window
+            let el = this.el;
+            //between 1 and 4 seconds
+            el.triggerInterval = Math.floor(Math.random() * 3000) + 1000;
+            el.startTime = Date.now();
+
+            el.lastMole = Date.now();
+            //turn on the game
+            this.data.gameRunning = true;
+
+            //sounds
+            let bkgdMusic = document.querySelector("#bkgdMusic");
+            bkgdMusic.components["sound"].playSound();
+          },
+
+          tick: function () {
+            //stop the game if it is gameover
+            if (!this.data.gameRunning) {
+              return;
+            }
+            let el = this.el;
+
+            //see if it is time to trigger a mole
+            if (Date.now() - el.lastMole >= el.triggerInterval) {
+              el.triggerMole();
+            }
+
+            //check if it is time to end the game
+            if (Date.now() - el.startTime >= this.data.gameDuration) {
+              el.gameOver();
+            }
+          },
+        });
+    </script>
+      
+    <script>
+          AFRAME.registerComponent('cloak', {
+            init: function() {
+              let geometry = new THREE.BoxGeometry(1, 1, 1);
+              let material = new THREE.MeshBasicMaterial({
+                 colorWrite: false
+              });
+              let mesh = new THREE.Mesh(geometry, material);
+              this.el.object3D.add(mesh);
+            }
+        })
+    </script>
+      
+    <script>
+        //TO DO: maybe pass in height here so you can control the animation with it
+        //https://aframe.io/docs/0.7.0/core/component.html#custom-property-type
+        AFRAME.registerComponent("mole", {
+          init: function () {
+            let el = this.el;
+
+            //game variables
+            let curPos = el.getAttribute("position");
+            el.origPos = { x: curPos.x, y: curPos.y, z: curPos.z };
+            //to test for points
+            el.inPlay = false;
+            el.activeTime = 3000;
+            //save the faces if there are faces
+            for (let child of el.children) {
+              if (child.getAttribute("mixin") == "neutralCoal") {
+                el.neutral = child;
+              } else if (child.getAttribute("mixin") == "sadCoal") {
+                el.sad = child;
+              }
+            }
+
+            el.trigger = () => {
+              //if it has a neutral expression then make sure it starts with a neutral expression
+              if (el.neutral) {
+                //turn on neutral and turn off sad
+                el.neutral.setAttribute("visible", "true");
+                el.sad.setAttribute("visible", "false");
+              }
+              //console.log("triggering mole");
+              el.setAttribute(
+                "position",
+                `${el.origPos.x} ${el.origPos.y} ${el.origPos.z}`
+              );
+              el.setAttribute(
+                "animation",
+                `property: position; to: ${el.origPos.x} ${el.origPos.y + 1.7} ${
+                  el.origPos.z
+                }; dur: 1000; easing: easeOutElastic; loop: false; `
+              );
+              el.inPlay = true;
+
+              el.timeout = setTimeout(() => {
+                el.inPlay = false;
+                el.setAttribute(
+                  "animation",
+                  `property: position; to: ${el.origPos.x} ${el.origPos.y} ${el.origPos.z}; dur: 200; easing: linear; loop: false;`
+                );
+                //set the flag on the parent to control which slot gets picked
+                // console.log("parent "+el.parentElement);
+                el.parentElement.setAttribute("active", "false");
+              }, el.activeTime);
+            };
+
+            el.hit = () => {
+              el.inPlay = false;
+              //cancel the old timeout
+              clearTimeout(el.timout);
+              el.parentElement.setAttribute("active", "false");
+              let timeoutDuration = 100;
+              //turn on sad if it has a sad face
+              if (el.sad) {
+                el.sad.setAttribute("visible", "true");
+                el.neutral.setAttribute("visible", "false");
+                //animation down slows a bit so we can see the face change
+                timeoutDuration = 500;
+              }
+              //animate back to hiding
+              el.setAttribute(
+                "animation",
+                `property: position; to: ${el.origPos.x} ${el.origPos.y} ${el.origPos.z}; dur: ${timeoutDuration}; easing: linear; loop: false;`
+              );
+            };
+          },
+        });
+    </script>
+      
+  </head>
+
+  <body>
+    <!--- Popup messages -->
+    <div id="overlay">
+      <div id="gameMessage">
+        <h2 id="gameMessageTitle">Whack-a-mole!</h2>
+        <p id="gameMessageText">
+          Tap to position.<br />Pinch to zoom in/out.<br />Beat the Grey Enermon
+          to beat GHG!
+        </p>
+        <button id="gameMessageButton" onclick="hideMessage()">Play</button>
+      </div>
+    </div>
+
+    <video class="arVideo" autoplay></video>
+    <script>
+      // grab the video element
+      const video = document.querySelector("video");
+      // when you grab the stream - display it on the <video> element
+      navigator.mediaDevices
+        .getUserMedia({
+          audio: false,
+          video: {
+            facingMode: "environment",
+          },
+        })
+        .then((stream) => {
+          video.srcObject = stream;
+        });
+    </script>
+
+    <h2 id="whackAMoleScore">Score: 0</h2>
+
+    <a-scene id="game" whack-a-mole >
+      <a-assets>
+        <img
+          id="coalNeutral"
+          src="./whackAMoleAssets/exclamation.png"
+        />
+        <img
+          id="coalSad"
+          src="./whackAMoleAssets/popCloud.png"
+        />
+        <img
+          id="holeArt"
+          src="./whackAMoleAssets/hole.png"
+        />
+        <a-asset-item
+          src="./whackAMoleAssets/scaryCat.glb"
+          id="coal"
+        ></a-asset-item>
+        <a-asset-item
+          src="./whackAMoleAssets/cop.glb"
+          id="gold"
+        ></a-asset-item>
+
+        <sound
+          id="fanfareAudio"
+          src="./whackAMoleAssets/fanfare.m4a"
+        ></sound>
+        <sound
+          id="bkgdMusicAudio"
+          src="./whackAMoleAssets/bkgdMusic.m4a"
+        ></sound>
+        
+        <a-mixin
+          id="cloaked"
+          scale="1.3 1.3 1.3"
+          position="0 0 0.1"
+          cloak
+        ></a-mixin>
+        <a-mixin
+          id="goldSettings"
+          class="clickable"
+          material="color: yellow"
+          scale="1 1 1"
+          rotation="0 270 0"
+          position="0 -0.3 0"
+          gltf-model="#gold"
+          mole
+        ></a-mixin>
+        <a-mixin
+          id="coalSettings"
+          material="color: black"
+          scale="1 1 1"
+          rotation="0 270 0"
+          position="0 -0.3 0"
+          gltf-model="#coal"
+          mole
+        ></a-mixin>
+        <a-mixin
+          id="holeSettings"
+          material="src: #holeArt"
+          rotation="90 0 0"
+          position="0 .78 0"
+          scale="1.5 1.5 1.5"
+        ></a-mixin>
+        <a-mixin id="tiltedToCamera" rotation="30 0 0" active="false"></a-mixin>
+        <a-mixin
+          id="sadCoal"
+          position="0 .75 0"
+          scale=".5 .5 .5"
+          rotation="0 90 0"
+          material="src:#coalSad"
+          visible="false"
+        ></a-mixin>
+        <a-mixin
+          id="neutralCoal"
+          position="0 .75 0"
+          scale=".5 .5 .5"
+          rotation="0 90 0"
+          material="src:#coalNeutral"
+        ></a-mixin>
+      </a-assets>
+
+      <a-sound
+        id="bkgdMusic"
+        src="#bkgdMusicAudio"
+        autoplay="false"
+        loop="true"
+      ></a-sound>
+      <a-sound
+        id="fanfare"
+        src="#fanfareAudio"
+        autoplay="false"
+        loop="false"
+      ></a-sound>
+
+
+<!-- NOTE:       It seems like class doesn't work in a mixin -->
+
+      <!-- Here are the mole locations -->
+      <!--    Row 1    -->
+      <a-entity mixin="tiltedToCamera" position="-1 2 -3.5">
+        <a-image mixin="holeSettings"></a-image>
+        <a-entity mixin="cloaked"></a-entity>
+        <a-entity mixin="goldSettings" class="clickable"></a-entity>
+        <a-entity mixin="coalSettings" class="clickable">
+          <a-image mixin="sadCoal"></a-image>
+          <a-image mixin="neutralCoal"></a-image>
+        </a-entity>
+      </a-entity>
+
+      <a-entity mixin="tiltedToCamera" position="1 2 -3.5">
+        <a-entity mixin="cloaked"></a-entity>
+        <a-image mixin="holeSettings"></a-image>
+        <a-entity mixin="goldSettings" class="clickable"></a-entity>
+        <a-entity mixin="coalSettings" class="clickable">
+          <a-image mixin="sadCoal"></a-image>
+          <a-image mixin="neutralCoal"></a-image>
+        </a-entity>
+      </a-entity>
+
+      <!--    Row 2    -->
+      <a-entity mixin="tiltedToCamera" position="-2.5 1 -3">
+        <a-entity mixin="cloaked"></a-entity>
+        <a-image mixin="holeSettings"></a-image>
+        <a-entity mixin="goldSettings" class="clickable"></a-entity>
+        <a-entity mixin="coalSettings" class="clickable">
+          <a-image mixin="sadCoal"></a-image>
+          <a-image mixin="neutralCoal"></a-image>
+        </a-entity>
+      </a-entity>
+
+      <a-entity mixin="tiltedToCamera" position="2.5 1 -3">
+        <a-entity mixin="cloaked"></a-entity>
+        <a-image mixin="holeSettings"></a-image>
+        <a-entity mixin="goldSettings" class="clickable"></a-entity>
+        <a-entity mixin="coalSettings" class="clickable">
+          <a-image mixin="sadCoal"></a-image>
+          <a-image mixin="neutralCoal"></a-image>
+        </a-entity>
+      </a-entity>
+
+      <!--    Row 3    -->
+      <a-entity mixin="tiltedToCamera" position="-1 0 -3">
+        <a-entity mixin="cloaked"></a-entity>
+        <a-image mixin="holeSettings"></a-image>
+        <a-entity mixin="goldSettings" class="clickable"></a-entity>
+        <a-entity mixin="coalSettings" class="clickable">
+          <a-image mixin="sadCoal"></a-image>
+          <a-image mixin="neutralCoal"></a-image>
+        </a-entity>
+      </a-entity>
+
+      <a-entity mixin="tiltedToCamera" position="1 0 -3">
+        <a-entity mixin="cloaked"></a-entity>
+        <a-image mixin="holeSettings"></a-image>
+        <a-entity mixin="goldSettings" class="clickable"></a-entity>
+        <a-entity mixin="coalSettings" class="clickable">
+          <a-image mixin="sadCoal"></a-image>
+          <a-image mixin="neutralCoal"></a-image>
+        </a-entity>
+      </a-entity>
+
+      <a-camera id="cam" fov="50" position="0 1 2">
+        <a-entity
+          cursor="rayOrigin: mouse"
+          raycaster="objects: .clickable"
+        ></a-entity>
+      </a-camera>
+    </a-scene>
+
+    <script>
+      //This is for the popup window messages
+      function showMessage(
+        newMessageTitle,
+        newMessage,
+        newButtonMessage = "Play",
+        callback = null
+      ) {
+        document.getElementById("overlay").style.display = "block";
+        document.getElementById("gameMessageTitle").innerHTML = newMessageTitle;
+        document.getElementById("gameMessageText").innerHTML = newMessage;
+        let closeBtn = document.getElementById("gameMessageButton");
+        closeBtn.innerText = newButtonMessage;
+        closeBtn.onclick = () => {
+          hideMessage(callback);
+        };
+      }
+      //hide the message overlay to play the game
+      function hideMessage(callback = null) {
+        document.getElementById("overlay").style.display = "none";
+        //run a callback function if there is one
+        if (callback) {
+          callback();
+        }
+      }
+
+      //on game start show the instructions
+      showMessage(
+        "Whack-A-Mole AR",
+        "This game was made to be played on an iPad for a client to pair with an exhibit on clean energy. They made the original game in SparkAR which promptly went obsolete. They considered remaking the game in Unity until they realized they would have to pay to keep the game active on an iPad. After consulting with me I suggested using AFrame as it does not require an app to be installed and it will work on a variety of devices. Lock your phone in landscape mode.<br><br>Play by tapping the coal but don't tap the sunshine.",
+        "Play Whack-A-Mole",
+        () => {
+          startGame();
+        }
+      );
+
+      function startGame() {
+        let gameCode = document.querySelector("#game").components["whack-a-mole"];
+        gameCode.startGame();
+      }
+    </script>
+  </body>
+</html>

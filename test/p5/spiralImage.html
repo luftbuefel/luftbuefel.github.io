@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+        
+     <script>
+        let topMargin = 50*2;
+    </script>
+    <script defer>
+        var picture;
+        var angle = 2.0;
+        var offset;
+        //size of the circle
+        var scalar = .5;
+        var angleChangeSpeed = 0.1;
+        let ringSpeed = .2;
+        let sampleImage;
+        let lastX;
+        let lastY;
+        let drawLimit;
+
+        function preload() {
+            picture = loadImage("../images/bela.jpg");
+        }
+
+        function setup() {
+            let adjustedHeight = windowHeight-topMargin;
+            if(picture.width>picture.height){		
+                createCanvas(windowWidth*(picture.height/picture.width), windowWidth);
+            }else{		
+                createCanvas(adjustedHeight, adjustedHeight*(picture.width/picture.height));
+            }
+            offset = width / 2;
+            drawLimit = sqrt(sq(offset) * 2);
+            lastX = offset;
+            lastY = offset;
+            sampleImage = createImage(width, height);
+            sampleImage.copy(picture, 0, 0, picture.width, picture.height, 0, 0, sampleImage.width, sampleImage.height);
+            sampleImage.loadPixels();
+            background(255);
+            noFill();
+        }
+
+        function draw() {
+            var x = offset + cos(angle) * scalar;
+            var y = offset + sin(angle) * scalar;
+            let thickness = 1;
+            let pixelColor = color(255);
+            //only change the size if the pixel being sampled is on the canvas
+            if (x >= 0 && x < width && y >= 0 && y < height) {
+                 pixelColor = sampleImage.get(x, y);
+                let gray = round((red(pixelColor) + green(pixelColor) + blue(pixelColor)) / 3);
+                thickness = map(gray, 0, 255, 15, 0);
+            }
+            strokeWeight(thickness);
+            line(lastX, lastY, x, y);
+            lastX = x;
+            lastY = y;
+            angle += angleChangeSpeed;
+            scalar += ringSpeed;
+            if (scalar > drawLimit) {
+                noLoop();
+            }
+        }
+    </script>
+    <title>Spiral Image</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>Spiral Image</h1>
+</body>
+
+</html>

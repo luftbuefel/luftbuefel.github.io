@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script> 
+    <script defer>
+        let topMargin = 50*2;
+        let unit;
+        let levelSlider;
+        let bottomHalf;
+        let triangleMinX, triangleMaxX;
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight-topMargin);
+            levelSlider = createSlider(0, 9, 3, 1);
+            levelSlider.position(30, 160);
+            levelSlider.input(updateTriangle);
+
+            colorMode(HSB);
+            noLoop();
+            noStroke();
+            textSize(20);
+            updateTriangle();
+        }
+
+        function updateTriangle() {
+            background(0);
+            let levels = levelSlider.value();
+            //write the level of the triangle under the slider
+            fill(0,0,100)
+            text("Level "+levels, levelSlider.x, levelSlider.y-30);
+            //unit will be the height of a triangle
+            unit = height / pow(2, levels);
+            //bottom half is some math magic to determine the size of each side
+            //this ensures it will be an equilateral triangle; it is half the length of one side
+            bottomHalf = unit * tan(radians(30));
+            //the left and right side of the drawn triangle; used to do some color magic to make it look nice
+            triangleMinX = (width/2)-(bottomHalf*pow(2, levels));	
+            triangleMaxX = (width/2)+(bottomHalf*pow(2, levels));
+            createTriangle(width / 2, 0, levels);
+        }
+
+        function createTriangle(x, y, level) {
+            if (level == 0) {
+                let center = width/2
+                let hue = map(x, triangleMinX, triangleMaxX,0,360);
+                let saturation = map(y, 0, height, 25, 100);
+                fill(hue, saturation, 100);
+                triangle(x, y, x + bottomHalf, y + unit, x - bottomHalf, y + unit);
+            } else {
+                level--;
+                //create a triangle at the current location
+                createTriangle(x, y, level);
+                let yOffset = unit * pow(2, level);
+                let xOffset = bottomHalf * pow(2, level);
+                //create a triangle at the bottom left
+                createTriangle(x - xOffset, y + yOffset, level);
+                //create a triangle at the bottom right
+                createTriangle(x + xOffset, y + yOffset, level);
+            }
+        }
+    </script>
+     <link rel="stylesheet" href="./p5.css">
+    <title>Sierpinski Triangle</title>
+</head>
+
+<body>   
+	<h1>Sierpinski Triangle</h1>
+</body>
+
+</html>
