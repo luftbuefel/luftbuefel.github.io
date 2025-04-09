@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    <script defer>
+        const CUBES_PER_UNIT = 27;
+        const CUBE_SIZE = 40;
+        const ROTATION_STEP = Math.PI/180;
+        const LEVEL = 2;
+        //let's number the cubes from top to bottom, back to front, left to right
+        // top level    middle level    bottom level
+        // 0 1 2          9  11           18 19 20
+        // 3   5                          21    23
+        // 6 7 8         15  17           24 25 26
+        const NUMBERS_TO_IGNORE = [4,10,12,13,14,16,22];
+
+        let pointCloud = [];
+        let currentRotation = 0;
+        let spongeSize = 0;
+
+        function setup(){
+          createCanvas(windowWidth, windowHeight-topMargin, WEBGL);
+          createSponge(LEVEL);
+          spongeSize = Math.pow(3, LEVEL)*CUBE_SIZE;
+          smooth(2);
+          colorMode(HSB);
+          strokeWeight(1);
+          // noStroke();
+        }
+
+        function draw(){
+          clear();
+          orbitControl();
+          drawSponge();
+        }
+
+        function drawSponge(){
+          push();
+          let halfSponge = spongeSize/2;
+          currentRotation+=ROTATION_STEP;
+          currentRotation%=TWO_PI;
+          //rotate the sponge around its center
+          rotateX(currentRotation);
+          rotateY(currentRotation);
+          rotateZ(currentRotation);
+          translate(-halfSponge,-halfSponge,-halfSponge);
+          //draw all the cubes to create the sponge
+          for(let point of pointCloud){
+            push();
+            translate(point.x,point.y,point.z);
+            let hue = map(point.x, 0,spongeSize, 0, 360);
+            let saturation = map(point.y, 0, spongeSize, 20, 100);
+            let brightness = map(point.z, 0, spongeSize, 20, 100);
+            fill(hue, saturation, brightness);
+            box(CUBE_SIZE);
+            pop();
+          }
+          pop();
+        }
+
+        function createSponge(level, xOffset=0, yOffset=0, zOffset=0){
+          if(level==0){
+            pointCloud.push({x:xOffset,y:yOffset,z:zOffset});
+          }else{
+            //calculate the size of one cube that makes up the current level
+            let levelOffset = Math.pow(3, level-1)*CUBE_SIZE;
+            let x,z,y;
+            for(let i = 0; i<CUBES_PER_UNIT;i++){
+              //check if we are calculating the current cube
+              if(NUMBERS_TO_IGNORE.indexOf(i)==-1){
+                x = i%3;
+                y = Math.floor(i/9);
+                z = Math.floor(i/3)%3;
+                createSponge(level-1, xOffset+(levelOffset*x),yOffset+(levelOffset*y),zOffset+(levelOffset*z));
+              }
+            }
+          }
+        }
+    </script>
+    <title>Menger Sponge</title>    
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>Menger Sponge</h1>
+</body>
+
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <title>Blob.io</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>Blob.io</h1>
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    <script>
+        class Blob {
+            constructor(maxX, maxY) {
+                this.diameter = 15;
+                this.x = round(random(0, maxX - this.diameter));
+                this.y = round(random(0, maxY - this.diameter));
+                this.color = color(round(random(0, 255)), round(random(0, 255)), round(random(0, 255)));
+            }
+            draw() {
+                fill(this.color);
+                ellipse(this.x, this.y, this.diameter);
+            }
+            isTouchingCircle(x, y, diameter) {
+                //get the distance between origins
+                let distance = sqrt(sq(x - this.x) + sq(y - this.y));
+                //if the distance is less than or equal to the size of combined radi, they are touching
+                if (distance <= (this.diameter / 2) + (diameter / 2)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+    </script>
+    <script>
+        class Enemy extends Blob {
+            constructor(maxX, maxY) {
+                super(maxX, maxY);
+                this.diameter = round(random(15, 35));
+                this.speedX = round(random(-3, 3));
+                if (this.speedX == 0) {
+                    this.speedX = 2;
+                }
+                this.speedY = round(random(-3, 3));
+                if (this.speedY == 0) {
+                    this.speedY = 2;
+                }
+            }
+            move() {
+                this.x += this.speedX;
+                if (this.x < 0 || this.x + this.diameter > windowWidth) {
+                    this.speedX *= -1;
+                }
+                this.y += this.speedY;
+                if (this.y < 0 || this.y + this.diameter > windowHeight) {
+                    this.speedY *= -1;
+                }
+                this.draw();
+            }
+        }
+    </script>
+    <script>
+        class SmartEnemy extends Enemy {	
+            constructor(maxX, maxY, target) {
+                super(maxX, maxY);
+                this.target = target;
+                this.color = color(255, 255, 0);
+                this.diameter *= 2;
+                //how far a smart enemy can see in pixels
+                this.targetRange = 400;
+            }
+
+            move() {
+                //always move toward the target if it is within range and the player is smaller
+                if (this.diameter > this.target.diameter && this.isTouchingCircle(this.target.x, this.target.y, this.targetRange)) {
+                    if (this.target.x < this.x) {
+                        this.x -= abs(this.speedX);
+                    }
+                    if (this.target.x > this.x) {
+                        this.x += abs(this.speedX);
+                    }
+                    if (this.target.y < this.y) {
+                        this.y -= abs(this.speedY);
+                    }
+                    if (this.target.y > this.y) {
+                        this.y += abs(this.speedY);
+                    }
+                    this.draw();
+                } else {
+                    //if the target is not in range or is bigger then act like a regular enemy
+                    super.move();
+                }
+            }
+        }
+    </script>
+    <script>
+        class Player extends Blob {
+            constructor() {
+                super();
+                this.reset();
+                this.art = 	this.createGradient();
+            }
+            createGradient(){
+                let size = 200;
+                let art = createGraphics(size, size);
+                art.noStroke();
+                let color1 = color(89, 176, 247);
+                let color2 = color(252, 240, 10);
+                let center = round(size/2);
+                let amount;
+                for (let radius = size / 2; radius > 0; radius-=2) {
+                    amount = radius / center;
+                    art.fill(lerpColor(color1, color2, amount));
+                    art.ellipse(size/2, size/2, radius, radius);
+                }
+                return art;
+            }
+            reset() {
+                this.x = windowWidth / 2;
+                this.y = windowHeight / 2;
+                this.diameter = 10;
+                this.speed = 4;
+            }
+            draw() {
+                push();
+                translate(-this.diameter,-this.diameter);
+                image(this.art, this.x, this.y, this.diameter*2,this.diameter*2);
+                pop();
+            }
+            //make the player grow larger
+            grow(amount) {
+                this.diameter += amount / 10;
+            }
+            move() {
+                //follow the mouse
+                if (this.x + this.speed < mouseX) {
+                    this.x += this.speed;
+                } else if (this.x - this.speed > mouseX) {
+                    this.x -= this.speed;
+                } else {
+                    this.x = mouseX;
+                }
+                if (this.y + this.speed < mouseY) {
+                    this.y += this.speed;
+                } else if (this.y - this.speed > mouseY) {
+                    this.y -= this.speed;
+                } else {
+                    this.y = mouseY;
+                }
+                this.draw();
+            }
+        }
+    </script>
+    <script defer>
+        let food = [];
+        let enemies = [];
+        let player;
+        let bkgd = "../images/dirt.jpg";
+        let gameIsRunning = false;
+
+        function preload() {
+            bkgd = loadImage(bkgd);
+        }
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight-topMargin);
+            //create the player
+            player = new Player();
+            reset();
+        }
+
+        function reset() {
+            //create the food
+            food = [];
+            for (let i = 0; i < 50; i++) {
+                food.push(new Blob(windowWidth, windowHeight));
+            }
+            enemies = [];
+            player.reset();
+            setTimeout(() => {
+                gameIsRunning = true;
+                addEnemies();
+            }, 2000);
+        }
+
+        function addEnemies() {
+            enemies = [];
+            //create the enemies
+            for (let i = 0; i < 10; i++) {
+                enemies.push(new Enemy(windowWidth, windowHeight));
+            }
+            //create smart enemies
+            for (let i = 0; i < 5; i++) {
+                enemies.push(new SmartEnemy(windowWidth, windowHeight, player));
+            }
+        }
+
+        function draw() {
+            background(bkgd);
+            for (let i = 0; i < food.length; i++) {
+                food[i].draw();
+                if (food[i].isTouchingCircle(player.x, player.y, player.diameter)) {
+                    player.grow(food[i].diameter);
+                    food.splice(i, 1);
+                }
+            }
+            for (let i = 0; i < enemies.length; i++) {
+                enemies[i].move();
+                if (enemies[i].isTouchingCircle(player.x, player.y, player.diameter)) {
+                    if (enemies[i].diameter < player.diameter) {
+                        player.grow(enemies[i].diameter);
+                        //remove the eaten enemy from our list
+                        enemies.splice(i, 1);
+                    } else {
+                        gameOver(false);
+                    }
+                }
+            }
+            player.move();
+            if (gameIsRunning && enemies.length == 0) {
+                gameOver(true);
+            }
+        }
+
+        function gameOver(win) {
+            gameIsRunning = false;
+            noLoop();
+            let centerX = windowWidth / 2;
+            let centerY = windowHeight / 2;
+            let boxWidth = 350;
+            let boxHeight = 270;
+
+            background(bkgd);
+            for(let thing of food){
+                thing.draw();
+            }
+            for(let enemy of enemies){
+                enemy.draw();
+            }
+            player.draw();
+
+            fill(255, 255, 255, 150);
+            rect(centerX - (boxWidth / 2), centerY - (boxHeight / 2), boxWidth, boxHeight);
+            fill(0);
+            textSize(50);
+            let message = "Game Over";
+
+            if (win) {
+                message += "\nYou Win";
+            } else {
+                message += "\nYou Lose";
+            }
+            message += "\n\nClick to Replay";
+            textAlign(CENTER);
+            text(message, centerX - (boxWidth / 2)+5, centerY - (boxHeight / 2) + 10, boxWidth, boxHeight);
+        }
+
+        function mousePressed() {
+            if (!gameIsRunning) {
+                reset();
+                loop();
+            }
+        }
+    </script>
+    
+</body>
+
+</html>
