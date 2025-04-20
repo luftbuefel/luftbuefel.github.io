@@ -74,10 +74,27 @@
             fireworkSounds.push(loadSound("../audio/firework_3.mp3"));	
             bkgd = loadImage(bkgd);
         }
+        
+        function resizeToFit(img, wMax, hMax){
+            let isLandscape = img.width>img.height?true:false;
+            //get it to fit perfectly
+            if(isLandscape){
+                img.resize(wMax, wMax/img.width*img.height);
+            }else{		
+                img.resize(img.width*hMax/img.height,hMax);
+            }
+            //check the other size and shrink if needed
+            if(img.height>hMax){
+                img.resize(img.width*(hMax/img.height), hMax);
+            }else if(img.width>wMax){
+                img.resize(wMax, img.height*(wMax/img.width));
+            }
+        }
 
         function setup() {
             noStroke();
-            createCanvas(windowWidth, windowHeight-topMargin);//create enough particles for all the fireworks
+            resizeToFit(bkgd, windowWidth, windowHeight-topMargin);
+            createCanvas(bkgd.width, bkgd.height);//windowWidth, windowHeight-topMargin);//create enough particles for all the fireworks
             for(let i = 0;i<fireworkParticleAmount*maxFireworks;i++){
                     fireworks.push(new FireworkParticle());
             }

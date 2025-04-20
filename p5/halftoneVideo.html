@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <title>I am in the Papers!</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>I am in the Papers!</h1>
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    <script>
+        let video;
+        let bkgd;
+        // How different must a pixel be to be a foreground pixel
+        let threshold = 40;
+
+        let sampleSize;
+        let numColumns = 100;
+
+        let multiplier = 1;
+
+        function setup() {
+            video = createCapture(VIDEO);
+            video.size(640,480);//width, height);
+            video.hide();
+            createCanvas(round((video.width / video.height) * windowHeight-topMargin), windowHeight-topMargin);//640,480);//, windowHeight);//, 480);
+            sampleSize = floor(video.width / numColumns);
+            bkgd = createImage(video.width, video.height);
+            bkgd.copy( 0, 0, video.width, video.height, 0, 0, video.width, video.height);
+            multiplier = width/bkgd.width;
+            setupScene();
+        }
+
+        function setupScene() {
+            noLoop();
+            let start = millis();
+            let delay = 1000;
+            setTimeout(() => {
+                showMessage("Stand clear.")
+            }, delay);
+            setTimeout(() => {
+                // loop();
+                showMessage("3");
+            }, delay * 2);
+            setTimeout(() => {
+                showMessage("2")
+            }, delay * 3);
+            setTimeout(() => {
+                showMessage("1")
+            }, delay * 4);
+            setTimeout(()=>{
+                loop();
+                initialize();
+            }, delay * 5);
+        }
+
+        function showMessage(message) {
+            clear();
+            fill(0, 0, 0);
+            rect(0, 0, width, height);
+            textSize(50);
+            let messageWidth = textWidth(message);
+            //draw and center the text
+            fill(255);
+            text(message, round((width / 2) - (messageWidth / 2)), round(height / 2));
+        }
+
+        let r1, g1, b1, r2, g2, b2, diff, i;
+
+        function draw() {
+            clear();
+            //draw the background
+            copy(bkgd,0,0,bkgd.width, bkgd.height,0,0,round((video.width / video.height) * height), height);
+//             background(255);
+            video.loadPixels();
+            bkgd.loadPixels();
+            for (let x = floor(sampleSize/2); x < video.width; x += sampleSize) {
+                for (let y = floor(sampleSize/2); y < video.height; y += sampleSize) {
+                    let i = ((y * video.width) + x) * 4;
+                    //compare the foreground and background color
+                    r1 = video.pixels[i];
+                    g1 = video.pixels[i + 1];
+                    b1 = video.pixels[i + 2];
+                    r2 = bkgd.pixels[i];
+                    g2 = bkgd.pixels[i + 1];
+                    b2 = bkgd.pixels[i + 2];
+                    diff = dist(r1, g1, b1, r2, g2, b2);
+                    // //Is the foreground color different from the background color
+                    if (diff > threshold) {
+                        noStroke();
+                        fill(0);
+                        let size = map(r1 + g1 + b1, 0, 255 * 3, sampleSize*1.5, 0);
+                        ellipse(x*multiplier, y*multiplier, size*multiplier, size*multiplier);
+                    }
+                }
+            }
+        }
+
+        function mousePressed() {
+            initialize();
+        }
+
+        function initialize() {
+            bkgd.copy(video, 0, 0, video.width, video.height, 0, 0, video.width, video.height);
+            bkgd.loadPixels();
+        }
+    </script>
+</body>
+
+</html>

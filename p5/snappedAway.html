@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/addons/p5.sound.js" integrity="sha512-TU9AWtV5uUZPX8dbBAH8NQF1tSdigPRRT82vllAQ1Ke28puiqLA6ZVKxtUGlgrH6yWFnkKy+sE6luNEGH9ar0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>Snapped Away</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>Snapped Away</h1>
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    
+    <script>
+        
+        class Pixel {
+
+            constructor(x, y, size) {
+                this.originX = x;
+                this.originY = y;
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.color = color(0, 0, 0, 0);
+                this.gravity = random(10, 20)
+                this.xSpeed = random(15, 25);
+                this.active = true;
+                this.falling = false;
+            }
+
+            draw() {
+                fill(this.color);
+                rect(this.x, this.y, this.size, this.size);
+            }
+
+            reset() {
+                this.color = color(0, 0, 0, 0);
+                this.x = this.originX;
+                this.y = this.originY;
+                this.falling = false;
+                this.active = true;
+            }
+
+            move() {
+                //only move and draw active pixels
+                if (!this.active) {
+                    return;
+                }
+                //if the pixel is visible and falling, move it
+                if (this.falling && alpha(this.color) == 255) {
+                    this.y += this.gravity;
+                    this.x += this.xSpeed;
+                }
+                //if the pixel is offscreen then reset it back to its original position
+                if (this.y > height || this.x < 0 || this.x > width) {
+                    this.active = false;
+                }
+                this.draw();
+            }
+
+            fall() {
+                this.falling = true;
+            }
+
+        }
+        
+        
+        let allPixels = [];
+
+        let snapSound;
+
+        let bkgd;
+
+        let camera;
+        let sampleSize = 3;
+        let threshold = 200;
+        //we square this so it can be used with distThreshold
+        threshold *= threshold;
+
+        function preload() {
+            snapSound = loadSound("../audio/snap.mp3");
+        }
+
+        function setup() {
+            createCanvas(600, 400); //windowWidth, windowHeight);
+            noStroke();
+            camera = createCapture(VIDEO);
+            camera.size(600, 400);
+            camera.hide();
+            //create a grid of pixel particles that covers the screen
+            for (let y = 0; y < height; y += sampleSize) {
+                for (let x = 0; x < width; x += sampleSize) {
+                    allPixels.push(new Pixel(x, y, sampleSize))
+                }
+            }
+            //save the background image
+            bkgd = createImage(camera.width, camera.height);
+            setupScene();
+        }
+
+        //show the countdown sequence to take a clear picture of the background
+        function setupScene() {
+            noLoop();
+            let start = millis();
+            let delay = 500;
+            setTimeout(() => {
+                showMessage("Stand clear.")
+            }, delay);
+            setTimeout(() => {
+                showMessage("3");
+            }, delay * 2);
+            setTimeout(() => {
+                showMessage("2")
+            }, delay * 3);
+            setTimeout(() => {
+                showMessage("1")
+            }, delay * 4);
+            setTimeout(initialize, delay * 5);
+        }
+
+        function showMessage(message) {
+            clear();
+            fill(0, 0, 0);
+            rect(0, 0, width, height);
+            textSize(50);
+            let messageWidth = textWidth(message);
+            //draw and center the text
+            fill(255);
+            text(message, round((width / 2) - (messageWidth / 2)), round(height / 2));
+        }
+
+        let i, r, g, b, r1, g1, b1;
+
+        function draw() {
+            //draw the background
+            image(bkgd, 0, 0);
+            bkgd.loadPixels();
+            camera.loadPixels();
+            //go through the pixels of the camera
+            //and see what is different from the background image
+            for (let pixel of allPixels) {
+                //update a pixel's colors as long as it is not falling
+                if (!pixel.falling) {
+                    i = ((pixel.y * width) + pixel.x) * 4;
+                    r = camera.pixels[i];
+                    g = camera.pixels[i + 1];
+                    b = camera.pixels[i + 2];
+                    r1 = bkgd.pixels[i];
+                    g1 = bkgd.pixels[i + 1];
+                    b1 = bkgd.pixels[i + 2];
+                    //when pixels are different, color them to match the camera
+                    if (distSquared(r, g, b, r1, g1, b1) > threshold) {
+                        pixel.color = color(r, g, b, 255);
+                    } else {
+                        //when pixels aren't that different, hide them
+                        pixel.color = color(0, 0, 0, 0);
+                    }
+                }
+                //animate the pixels
+                pixel.move();
+            }
+        }
+
+        //the faster way to calculate distance (square roots are for squares)
+        function distSquared(r, g, b, r1, g1, b1) {
+            return sq(((r1 - r) * (r1 - r)) + ((g1 - g) * (g1 - g)) + ((b1 - b) * (b1 - b)));
+        }
+
+        //click the mouse and snap everything away
+        function mousePressed() {
+            snap();
+        }
+
+        //run the snap away effect
+        function snap() {
+            let numRows = floor(height / sampleSize);
+            let numCols = floor(width / sampleSize);
+            //figure out the offset to snap away each row
+            let destructionTime = 2000 / numRows;//snapSound.duration / numRows;
+            //play the sound
+            snapSound.play();
+            //go through each row and snap them away one at a time with an offset
+            //the offset makes it blow away from top to bottom
+            for (let i = 0; i <= numRows; i++) {
+                let startIndex = i * numCols;
+                setTimeout(() => {
+                    for (let i = startIndex; i < startIndex + numCols; i++) {
+                        allPixels[i].fall()
+                    }
+                }, destructionTime * i);
+            }
+            //reset the effect after a time
+            setTimeout(() => {
+                for (let pixel of allPixels) {
+                    pixel.reset();
+                }
+            }, 6000);
+        }
+
+        //store the background image and start the animation
+        function initialize() {
+            bkgd.copy(camera, 0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height);
+            loop();
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <title>I am a Ghost!</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+    
+	<h1>I am a Ghost!</h1>
+    
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    
+    <script >
+        let video;
+        let bkgd;
+        let ghost;
+        
+        function setup() {
+            video = createCapture(VIDEO);
+            video.size(320, 240);
+            video.hide();
+            let canvas = createCanvas(round((video.width / video.height) * windowHeight-topMargin), windowHeight-topMargin);
+//            canvas.drawingContext.getContextAttributes().willReadFrequently=true;
+            bkgd = createImage(video.width, video.height);
+            ghost = createImage(video.width, video.height);
+            setupScene();
+        }
+
+
+        function setupScene() {
+            noLoop();
+            let start = millis();
+            let delay = 100;//0;
+            setTimeout(() => {
+                showMessage("Stand clear.")
+            }, delay);
+            setTimeout(() => {
+                showMessage("3");
+            }, delay * 2);
+            setTimeout(() => {
+                showMessage("2")
+            }, delay * 3);
+            setTimeout(() => {
+                showMessage("1")
+            }, delay * 4);
+            setTimeout(()=>{
+                loop();
+                initialize();
+            }, delay * 5);
+        }
+
+        function showMessage(message) {
+            fill(0);
+            rect(0, 0, width, height);
+            textSize(50);
+            let messageWidth = textWidth(message);
+            //draw and center the text
+            fill(255);
+            text(message, round((width / 2) - (messageWidth / 2)), height / 2);
+        }
+
+//        let r1, g1, b1, r2, g2, b2, i;
+
+        function draw() {	
+            ghost.loadPixels();
+            video.loadPixels();
+
+          /*  for (i = 0; i < video.pixels.length; i += 4) {
+                //compare the foreground and background color
+                r1 = video.pixels[i];
+                g1 = video.pixels[i + 1];
+                b1 = video.pixels[i + 2];
+                r2 = bkgd.pixels[i];
+                g2 = bkgd.pixels[i + 1];
+                b2 = bkgd.pixels[i + 2];
+                //Is the foreground color different from the background color
+                if (isDifferent(r1, g1, b1, r2, g2, b2)) {
+                    // If so, display the foreground color
+                    replace.pixels[i] = r1;
+                    replace.pixels[i + 1] = g1;
+                    replace.pixels[i + 2] = b1;
+                } else {
+                    //show the background color
+                    replace.pixels[i] = r2;
+                    replace.pixels[i + 1] = g2;
+                    replace.pixels[i + 2] = b2;
+                    //make it transparent to create a ghost effect
+                    replace.pixels[i + 3] = 100;
+                }
+            }*/
+            ghost.updatePixels();
+            //draw the background
+            copy(bkgd, 0, 0, bkgd.width, bkgd.height, 0, 0, width, height);
+            copy(ghost, 0, 0, ghost.width, ghost.height, 0, 0, width, height);
+        }
+
+          function mousePressed() {
+            initialize();
+        }
+
+        function initialize() {
+            ghost.copy(video, 0, 0, video.width, video.height, 0, 0, video.width, video.height);
+            bkgd.copy(video, 0, 0, video.width, video.height, 0, 0, video.width, video.height);
+        }
+        
+    </script>
+    
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <title>I am an Optical Illusion</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>I am an Optical Illusion</h1>
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    <script>
+    let camera;
+    //keep these numbers even to preserve the checkerboard pattern
+    let camWidth = 80//160;//320;
+    let camHeight = 60//120;//240;
+
+
+    let grid;
+    let gridUnit = 1;
+
+    function setup() {
+        camera = createCapture(VIDEO);
+        camera.size(camWidth, camHeight);
+        camera.hide();
+        createCanvas(round((camera.width / camera.height) * windowHeight), windowHeight-topMargin);
+//        createCanvas(windowWidth, windowHeight-topMargin);
+        grid = initializeGrid(gridUnit, camWidth, camHeight);
+        noStroke();
+    }
+
+    function initializeGrid(unit, gridWidth, gridHeight) {
+        let numCols = floor(gridWidth / unit);
+        let numRows = floor(gridHeight / unit);
+        let points = new Array(numCols * numRows);
+        let x, y;
+        for (let i = 0; i < points.length; i++) {
+            x = i % numCols;
+            y = (i - x) / numCols;
+            points[i] = createVector(x * unit, y * unit);
+        }
+
+        let mesh = {
+            "points": points,
+            "cols": floor(numCols),
+            "rows": floor(numRows),
+            "unit": unit
+        };
+        return mesh;
+    }
+
+    function draw() {
+        background(0);
+        camera.loadPixels();
+        //loop through all the camera pixels
+        let points = grid.points;
+        let multiplier =height/grid.rows;
+        let x, y;
+        for (let i = 0; i < points.length; i++) {
+            x = points[i].x;
+            y = points[i].y;
+            let pixel = ((y * camWidth) + x) * 4;
+            let pixelValue = (camera.pixels[pixel] + camera.pixels[pixel + 1] + camera.pixels[pixel + 2]) / 3;
+            //multiply the offset by something to get an interesting visual
+            points[i].z = map(pixelValue, 0, 255, 0, grid.unit * 4);
+            let offset = points[i].z;
+            point((points[i].x + offset) * multiplier, (points[i].y - offset) * multiplier);
+
+        }
+        //draw the shapes
+        let lastPoint = grid.length-grid.cols;
+        let pt,pt1,pt2,pt3;
+        let firstColor = true;
+        for(let i = 0;i<points.length;i++){
+            if(i>0 && i%grid.cols==grid.cols-1){
+                 continue;
+            }
+            //this depends on there being even numbers of cols
+            firstColor = !firstColor
+            if(firstColor){
+                //blue
+                // fill(28, 89, 255);
+                fill(points[i].x*2, 89, points[i].y*2);
+            }else{
+                //orange
+                // fill(255, 138, 28);
+                fill(points[i].x*2, 138, points[i].y*2);
+            }
+
+            pt = points[i];
+            pt1 = points[i+1];
+            pt2 = points[i+grid.cols+1];
+            pt3 = points[i+grid.cols];
+            //this only draws a quadrilateral only if there all 4 points
+            if(!pt||!pt1||!pt2||!pt3){
+                return;
+            }
+            //draw the grid square
+            beginShape();
+            vertex((pt.x+pt.z)* multiplier, (pt.y-pt.z)* multiplier);
+            vertex((pt1.x+pt1.z)* multiplier, (pt1.y-pt1.z)* multiplier);
+            vertex((pt2.x+pt2.z)* multiplier, (pt2.y-pt2.z)* multiplier);
+            vertex((pt3.x+pt3.z)* multiplier, (pt3.y-pt3.z)* multiplier);
+            endShape();
+
+        }
+
+
+    }
+    </script>
+</body>
+
+</html>
