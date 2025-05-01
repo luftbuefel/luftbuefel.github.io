@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/addons/p5.sound.js" integrity="sha512-TU9AWtV5uUZPX8dbBAH8NQF1tSdigPRRT82vllAQ1Ke28puiqLA6ZVKxtUGlgrH6yWFnkKy+sE6luNEGH9ar0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <title>Dungeon Crawl</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>Dungeon Crawl</h1>
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    <script>
+        class Tile {
+            static size = 50;
+
+            constructor(x, y, art = null) {				
+                if(art==null){
+                    this.art = [122,82,48];
+                }else{
+                    this.art = art;
+                }
+                this.size = Tile.size;
+                this.x = x;
+                this.y = y;
+                noStroke();
+            }
+            draw() {
+                if(this.art.length){
+                    fill(...this.art);
+                    rect(this.x*this.size, this.y*this.size, this.size, this.size);			
+                } else {
+                    image(this.art, this.x*this.size, this.y*this.size, this.size, this.size);
+                }
+            }
+        }
+        
+        
+        class Item extends Tile{
+            constructor(x, y, art = null, tag=null) {
+                super(x,y,art);		
+                this.tag = tag;
+            }
+        }
+    </script>
+    <script>
+        class Enemy extends Tile {
+            constructor(x, y, art = [241, 16, 75], tag=null) {
+                super(x, y, art);
+                this.moveX = 0;
+                this.moveY = 1;
+                this.spawnX = x;
+                this.spawnY = y;
+                this.tag = tag;
+            }
+
+            respawn(){
+                this.move(this.spawnX, this.spawnY);
+            }
+
+            getNextMove() {
+                return {
+                    x: this.x + this.moveX,
+                    y: this.y + this.moveY
+                }
+            }
+
+            move(x, y) {
+                this.x = x; 
+                this.y = y;
+            }
+        }
+        
+        class ToughEnemy extends Enemy {
+            constructor(x, y, art  = [166, 18, 95], tag=null) {
+                super(x, y, art);
+                this.moveX = 1;
+                this.moveY = 0;
+            }
+        }
+        
+        class ChasingEnemy extends Enemy {
+            constructor(x, y, art, tag=null, chaseTarget = null) {
+                super(x, y, art)
+                this.chaseTarget = chaseTarget;
+            }
+            getNextMove() {
+                var [x,y] = [this.x,this.y];
+                if (this.chaseTarget) {
+                    let horiz = () => {
+                        let direction = this.chaseTarget.x - this.x
+                        return (direction > 0) ? 1 : (direction == 0) ? 0 : -1
+                    }
+                    let vert = () => {
+                        let direction = this.chaseTarget.y - this.y
+                        return (direction > 0) ? 1 : (direction == 0) ? 0 : -1
+                    }
+                    if (random(1) > .5) { 
+                        //we do a little randomness
+                        let move = horiz();
+                        if (move == 0) {
+                            y += vert();
+                        } else {
+                            x += move;
+                        }
+                    } else {
+                        let move = vert();
+                        if (move == 0) {
+                            x += horiz();
+                        } else {
+                            y += move;
+                        }
+                    }
+                }
+                return {x:x,y:y}
+            }
+
+        }
+    </script>
+    <script>
+        let level1 = `
+        ****************
+        *  b  $     g  *
+        *  ******      *
+        *      ^d   @  *
+        *********      *
+        *       $    $ *
+        * *******      *
+        *  * #  * ^    *
+        * ^*    *   ~Q *
+        *a *   $***  a *
+        *  *      ***  *
+        *  *d***    d  *
+        *  *$g$*    *  *
+        ****************`;
+
+        let level2 = `
+        ********************
+        *$             *   *
+        * ^a       $   d # *
+        *   a     $ $  *   *
+        *g$  a   $   $ *****
+        *     a        * $ *
+        *              *   *
+        *$g    *d*******g~ *
+        *      *a       ~  *
+        ********       ~ ^ *
+        *      *      ~    *
+        * @          ~     *
+        *       $      b $ *
+        ********************`;
+
+
+        let level3 = `
+        ****************
+        *     b        *
+        *  ******      *
+        *     ^ d      *
+        *********   $  *
+        *       ^      *
+        *   ******     D
+        *   *  # *   a *
+        *   *    *     *
+        *   *    **    *
+        *   *  $  *    *
+        *   *     ***  *
+        * @ *          *
+        ****************`;
+    </script>
+    <script>
+        class Player extends Tile {
+
+            constructor(x, y, art) {
+                super(x, y, art);
+                this.coins = 0;
+                this.keys = 0;
+                this.points = 0;
+                this.inventory = [];
+                this.lives = 3;
+                this.originX = x;
+                this.originY = y;
+            }
+
+            setPosition(x, y) {
+                this.x = x;
+                this.y = y;
+                this.originX = x;
+                this.originY = y;
+            }
+
+            respawn() {
+                this.x = this.originX;
+                this.y = this.originY;
+            }
+
+            move(x, y) {
+                this.x += x;
+                this.y += y;
+            }
+
+            pickUp(item) {
+                this.inventory.push(item);
+                if (item.tag == "^") {
+                    this.keys++;
+                    this.points++;
+                }
+            }
+
+            addCoin(value = 1) {
+                this.coins += value;
+                this.points += value * 2;
+            }
+
+            useKey() {
+                for (let i = 0; i < this.inventory.length; i++) {
+                    if (this.inventory[i].tag == "^") {
+                        this.inventory.splice(i, 1);
+                        this.keys--;
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+    </script>
+    
+    <script>
+    //Game Engine
+    //https://openprocessing.org/sketch/1193290 
+
+    let levels = [level2, level1, level3];
+
+    //item keys
+    const COIN = "$";
+    const KEY = "^";
+    const DOOR = "d";
+    const WARP_DOOR = "D";
+    const WARP = "#";
+    const WALL = "*";
+    const SPAWN = "@";
+    const PIT = "Q";
+    const LAVA = "~";
+    const ENEMY = "a";
+    const TOUGH_ENEMY = "b";
+    const SMART_ENEMY = "c";
+    const GEM = "g";
+
+
+    let wallArt;
+    let floorArt;
+    let keyArt;
+    let playerArt;
+    let coinArt;
+    let warpArt;
+    let enemyArt;
+    let enemy2Art;
+    let bkgdArt;
+    let doorArt;
+    let gemArt;
+    let pitArt;
+    let lavaArt;
+
+    //sounds
+    let unlock;
+    let ting;
+    let warp;
+    let step1, step2, step3, step4;
+    let steps;
+    let sizzle;
+    let fall;
+    let attack;
+
+    let player;
+    let enemies;
+    let currentTiles;
+    let items;
+    let dungeonWidth;
+    let dungeonHeight;
+    let timer;
+    let currentTime = 0;
+
+    let enemyTimer;
+
+    let playingGame = true;
+
+    function preload() {
+        wallArt = loadImage("./dungeonAssets/wall.png");
+        floorArt = loadImage("./dungeonAssets/floor.png");
+        keyArt = loadImage("./dungeonAssets/key.png");
+        playerArt = loadImage("./dungeonAssets/player.png");
+        coinArt = loadImage("./dungeonAssets/coin.png");
+        warpArt = loadImage("./dungeonAssets/warpTile.png");
+        enemyArt = loadImage("./dungeonAssets/enemyNormal.gif");
+        enemy2Art = loadImage("./dungeonAssets/enemyNormal2.gif");
+        bkgdArt = loadImage("./dungeonAssets/cavern.webp");
+        doorArt = loadImage("./dungeonAssets/door.png");
+        gemArt = loadImage("./dungeonAssets/gem.png");
+        pitArt = loadImage("./dungeonAssets/pit.png");
+        lavaArt = loadImage("./dungeonAssets/animateLava.gif");
+
+        unlock = loadSound("./dungeonAssets/unlock.mp3");
+        ting = loadSound("./dungeonAssets/ting.mp3");
+        warp = loadSound("./dungeonAssets/unlock.mp3");
+        step1 = loadSound("./dungeonAssets/step1.mp3");
+        step2 = loadSound("./dungeonAssets/step2.mp3");
+        step3 = loadSound("./dungeonAssets/step3.mp3");
+        step4 = loadSound("./dungeonAssets/step4.mp3");
+        sizzle = loadSound("./dungeonAssets/sizzle.mp3");
+        fall = loadSound("./dungeonAssets/fall.mp3");
+        gem = loadSound("./dungeonAssets/gem.mp3");
+        attack = loadSound("./dungeonAssets/enemyAttack.mp3");
+        steps = [step1, step2, step3, step4];
+        for (let sound of steps) {
+            sound.setVolume(.1);
+        }
+
+    }
+
+    function setup() {
+        let margin = 5;
+        createCanvas(windowWidth-margin, windowHeight-margin-topMargin);
+        player = new Player(0, 0, playerArt);
+        nextLevel();
+    }
+
+    function createLevel(levelData) {
+        currentTiles = [];
+        enemies = [];
+        items = [];
+        let rows = levelData.split("\n");
+        //filter out any empty entries; it was a bug
+        rows = rows.filter(row => row.length > 0);
+        //the first slot was empty; that const result = words.filter(word => word.length > 6);was the bug
+        // print(rows);
+        dungeonWidth = trim(rows[0]).length;
+        dungeonHeight = rows.length;
+
+        for (let y = 0; y < rows.length; y++) {
+            let row = trim(rows[y]);
+            for (let x = 0; x < row.length; x++) {
+                switch (row[x]) {
+                    case " ":
+                        currentTiles.push(new Tile(x, y, floorArt));
+                        break;
+                    case WALL:
+                        currentTiles.push(new Item(x, y, wallArt, WALL));
+                        break;
+                    case KEY:
+                        currentTiles.push(new Item(x, y, floorArt));
+                        items.push(new Item(x, y, keyArt, KEY));
+                        break;
+                    case SPAWN:
+                        currentTiles.push(new Item(x, y, floorArt));
+                        player.setPosition(x, y);
+                        break;
+                    case COIN:
+                        currentTiles.push(new Item(x, y, floorArt));
+                        items.push(new Item(x, y, coinArt, COIN));
+                        break;
+                    case GEM:
+                        currentTiles.push(new Item(x, y, floorArt));
+                        items.push(new Item(x, y, gemArt, GEM));
+                        break;
+                    case DOOR:
+                        currentTiles.push(new Item(x, y, floorArt, DOOR));
+                        items.push(new Item(x, y, doorArt, DOOR));
+                        break;
+                    case WARP_DOOR:
+                        currentTiles.push(new Item(x, y, floorArt, WARP_DOOR));
+                        items.push(new Item(x, y, doorArt, WARP_DOOR));
+                        break;
+                    case WARP:
+                        currentTiles.push(new Item(x, y, floorArt));
+                        items.push(new Item(x, y, warpArt, WARP));
+                        break;
+                    case PIT:
+                        currentTiles.push(new Item(x, y, pitArt, PIT));
+                        break;
+                    case LAVA:
+                        currentTiles.push(new Item(x, y, lavaArt, LAVA));
+                        break;
+                    case ENEMY:
+                        currentTiles.push(new Item(x, y, floorArt));
+                        enemies.push(new Enemy(x, y, enemyArt, ENEMY));
+                        break;
+                    case TOUGH_ENEMY:
+                        currentTiles.push(new Item(x, y, floorArt));
+                        enemies.push(new ToughEnemy(x, y, enemy2Art, TOUGH_ENEMY));
+                        break;
+                    case SMART_ENEMY: //side enemy
+                        currentTiles.push(new Tile(x, y, floorArt));
+                        enemies.push(new ChasingEnemy(x, y, [66, 66, 166], SMART_ENEMY, player));
+                        break;
+
+                    default:
+                        currentTiles.push(new Tile(x, y, null, [255, 0, 255]));
+                }
+            }
+        }
+        currentTime = 0;
+        clearInterval(timer);
+        timer = setInterval(updateTime, 1000);
+        clearInterval(enemyTimer);
+        enemyTimer = setInterval(moveEnemies, 500);
+    }
+
+    function updateTime() {
+        currentTime++;
+    }
+
+
+    function drawLevel() {
+        for (let tile of currentTiles) {
+            tile.draw();
+        }
+        for (let item of items) {
+            item.draw();
+        }
+        for (let enemy of enemies) {
+            enemy.draw();
+        }
+    }
+
+    function nextLevel() {
+        if (levels.length > 0) {
+            let levelData = levels[0];
+            levels.shift();
+            createLevel(levelData);
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        playingGame = false;
+        clearInterval(enemyTimer);
+        noLoop();
+        clear();
+        background(0);
+        fill(255);
+        textSize(24);
+        textStyle(BOLD);
+        text("Game Over", width / 2, height / 2);
+    }
+
+    function draw() {
+        background(bkgdArt);
+        push();
+        translate((width / 2) - (dungeonWidth * Tile.size / 2), 0);
+        drawLevel();
+        player.draw();
+        //draw the score
+        fill(255);
+        textSize(24);
+        textStyle(BOLD);
+        fill(0,0,0,150);
+        rect(-5, dungeonHeight * Tile.size, dungeonWidth*Tile.size+10, 150);
+        fill(255);
+        let dungeonRtEdge = dungeonWidth * Tile.size;
+        text("Score: " + player.points, 0, (dungeonHeight * Tile.size) + 35);
+        text("Lives: " + player.lives, 0, (dungeonHeight * Tile.size) + 70);
+        text("Coins: " + player.coins, dungeonRtEdge - (dungeonRtEdge / 2), (dungeonHeight * Tile.size) + 70);
+        text("Time: " + currentTime, dungeonRtEdge - (dungeonRtEdge / 2), (dungeonHeight * Tile.size) + 35);
+        text("Keys: " + player.keys, dungeonRtEdge - textWidth("Keys: " + player.keys), (dungeonHeight * Tile.size) + 35);
+        pop();
+
+    }
+
+    function killPlayer() {
+        player.lives--;
+        if (player.lives <= 0) {
+            endGame();
+        } else {
+            for (let enemy of enemies) {
+                enemy.respawn();
+            }
+            player.respawn();
+        }
+    }
+
+    function moveEnemies() {
+        for (let enemy of enemies) {
+            tryToMoveEnemy(enemy);
+        }
+    }
+
+    function tryToMoveEnemy(enemy) {
+        let x, y;
+        //destructuring assignment
+        ({
+            x,
+            y
+        } = enemy.getNextMove());
+
+        if (obstacleIsAt(x, y)) {
+            enemy.moveX *= -1;
+            enemy.moveY *= -1;
+            x = enemy.x + enemy.moveX;
+            y = enemy.y + enemy.moveY;
+            if (obstacleIsAt(x, y)) {
+                return;
+            }
+        }
+        if (x == player.x && y == player.y) {
+            attack.play();
+            killPlayer();
+        }
+        enemy.move(x, y);
+    }
+
+    function obstacleIsAt(x, y) {
+        let position = (y * dungeonWidth) + x;
+        let tag = currentTiles[position]?.tag;
+        if ((position < 0 || position >= currentTiles.length) || (tag == WALL) || (tag == DOOR) || (tag == WARP_DOOR) || (tag == PIT) || (tag == LAVA)) {
+            return true;
+        }
+        return false;
+    }
+
+    function tryToMovePlayer(xMove, yMove) {
+        if (!playingGame) {
+            return;
+        }
+        //calculate the position after moving
+        let x = player.x + xMove;
+        let y = player.y + yMove;
+
+        //see what is at the new location
+        let position = (y * dungeonWidth) + x;
+
+        //make sure you don't go off the edge of the map
+        if (position < 0 || position >= currentTiles.length) {
+            return;
+        }
+        let tag = currentTiles[position]?.tag;
+        //if it is a wall then you can't move
+        if (tag == WALL) {
+            //you cannot move there!
+            return;
+        }
+        if (tag == LAVA || tag == PIT) {
+            if(tag==LAVA){
+                sizzle.play();
+            }else if(tag==PIT){
+                fall.play();
+            }
+            killPlayer();
+            return;
+        }
+
+        //if it is an enemy you get hurt/die
+        for (let enemy of enemies) {
+            if (enemy.x == x && enemy.y == y) {
+                attack.play();
+                killPlayer();
+                return;
+            }
+        }
+
+        //if it is an item, you interact with it
+        for (let item of items) {
+            if (item.x == x && item.y == y) {
+                //print(item.tag);
+                switch (item.tag) {
+                    case WARP_DOOR:
+                        if (player.useKey()) {
+                            //change the door to a warp
+                            for (let i = 0; i < items.length; i++) {
+                                if (items[i] === item) {
+                                    items[i] = new Item(item.x, item.y, warpArt, WARP);
+                                    return;
+                                }
+                            }
+                            //play the unlock sound 
+                            unlock.play();
+                        }
+                        return;
+                    case DOOR:
+                        //try to use a key
+                        if (player.useKey()) {
+                            //remove the tag form the coresponding tile on the currentTiles array so enemies will pass through the open door
+                            let position = (item.y * dungeonWidth) + item.x;
+                            currentTiles[position].tag = null;
+                            //filter out the locked door so it disappears
+                            items = items.filter(thing => thing != item);
+                            //play the unlock sound 
+                            unlock.play();
+                        }
+                        return;
+                    case WARP:
+                        warp.play();
+                        nextLevel();
+                        return;
+                    case COIN:
+                        // print("get coin");
+                        //add the coin value to the player
+                        player.addCoin();
+                        ting.play();
+                        //filter out the coin you collected so you can collect it again
+                        items = items.filter(thing => thing != item);
+                        break;
+                    case GEM:
+                        player.addCoin(10);
+                        gem.play();
+                        items = items.filter(thing => thing != item);
+                        break;
+                    case KEY:
+                        // print("get key");
+                        //put it in your inventory
+                        player.pickUp(item);
+                        ting.play();
+                        //filter out the key so you can't pick it up again
+                        items = items.filter(thing => thing != item);
+                        break;
+                }
+            }
+        }
+        player.move(xMove, yMove);
+
+        random(steps).play();
+    }
+
+    function keyPressed() {
+        if (!playingGame) {
+            return;
+        }
+        switch (keyCode) {
+            case UP_ARROW:
+                tryToMovePlayer(0, -1);
+                break;
+            case DOWN_ARROW:
+                tryToMovePlayer(0, 1);
+                break;
+            case RIGHT_ARROW:
+                tryToMovePlayer(1, 0);
+                break;
+            case LEFT_ARROW:
+                tryToMovePlayer(-1, 0);
+                break;
+        }
+        draw();
+    }
+    </script>
+</body>
+
+</html>

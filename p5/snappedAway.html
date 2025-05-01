@@ -11,10 +11,6 @@
 
 <body>   
 	<h1>Snapped Away</h1>
-    <script>
-        //code for a popup with instructions can go here
-        let topMargin = 50*2;
-    </script>
     
     <script>
         
@@ -27,7 +23,7 @@
                 this.y = y;
                 this.size = size;
                 this.color = color(0, 0, 0, 0);
-                this.gravity = random(10, 20)
+                this.gravity = random(5, 10);
                 this.xSpeed = random(15, 25);
                 this.active = true;
                 this.falling = false;
@@ -74,59 +70,56 @@
 
         let snapSound;
 
-        let bkgd;
+        let cleanPlate;
 
         let camera;
-        let sampleSize = 3;
-        let threshold = 200;
+        let sampleSize;
+        let numColumns = 100;
+        let threshold = 30;
         //we square this so it can be used with distThreshold
         threshold *= threshold;
 
         function preload() {
             snapSound = loadSound("../audio/snap.mp3");
         }
-
+        
         function setup() {
-            createCanvas(600, 400); //windowWidth, windowHeight);
+            noLoop();       
             noStroke();
             camera = createCapture(VIDEO);
-            camera.size(600, 400);
+            camera.size(640,480);
             camera.hide();
+            let proportion = camera.width/camera.height;
+            createCanvas(640,480);//round(proportion*(windowHeight-topMargin)), windowHeight-topMargin);   
+            cleanPlate = createImage(camera.width, camera.height);
+            //calculate the sample size needed
+            sampleSize = floor(camera.width / numColumns);
+            let multiplier = width/cleanPlate.width;
             //create a grid of pixel particles that covers the screen
             for (let y = 0; y < height; y += sampleSize) {
                 for (let x = 0; x < width; x += sampleSize) {
                     allPixels.push(new Pixel(x, y, sampleSize))
+//                    allPixels.push(new Pixel(x*sampleSize, y*sampleSize, sampleSize*sampleSize))
                 }
             }
-            //save the background image
-            bkgd = createImage(camera.width, camera.height);
-            setupScene();
+            initialize();
         }
 
         //show the countdown sequence to take a clear picture of the background
-        function setupScene() {
-            noLoop();
-            let start = millis();
-            let delay = 500;
-            setTimeout(() => {
-                showMessage("Stand clear.")
-            }, delay);
-            setTimeout(() => {
-                showMessage("3");
-            }, delay * 2);
-            setTimeout(() => {
-                showMessage("2")
-            }, delay * 3);
-            setTimeout(() => {
-                showMessage("1")
-            }, delay * 4);
-            setTimeout(initialize, delay * 5);
+        function initialize(){
+            let delay = 700;
+            showMessage("Stand Clear");
+            setTimeout(()=>{showMessage("3")},delay);
+            setTimeout(()=>{showMessage("2")},delay*2);
+            setTimeout(()=>{showMessage("1")},delay*3);
+            setTimeout(()=>{
+                getCleanBackground(); 
+                loop();
+            },delay*4);
         }
-
+        
         function showMessage(message) {
-            clear();
-            fill(0, 0, 0);
-            rect(0, 0, width, height);
+            background(0);
             textSize(50);
             let messageWidth = textWidth(message);
             //draw and center the text
@@ -137,9 +130,9 @@
         let i, r, g, b, r1, g1, b1;
 
         function draw() {
+            cleanPlate.loadPixels();
             //draw the background
-            image(bkgd, 0, 0);
-            bkgd.loadPixels();
+            copy(cleanPlate, 0, 0,cleanPlate.width, cleanPlate.height, 0, 0, width, height);
             camera.loadPixels();
             //go through the pixels of the camera
             //and see what is different from the background image
@@ -150,11 +143,11 @@
                     r = camera.pixels[i];
                     g = camera.pixels[i + 1];
                     b = camera.pixels[i + 2];
-                    r1 = bkgd.pixels[i];
-                    g1 = bkgd.pixels[i + 1];
-                    b1 = bkgd.pixels[i + 2];
+                    r1 = cleanPlate.pixels[i];
+                    g1 = cleanPlate.pixels[i + 1];
+                    b1 = cleanPlate.pixels[i + 2];
                     //when pixels are different, color them to match the camera
-                    if (distSquared(r, g, b, r1, g1, b1) > threshold) {
+                    if (isDifferent(r, g, b, r1, g1, b1)) {
                         pixel.color = color(r, g, b, 255);
                     } else {
                         //when pixels aren't that different, hide them
@@ -166,11 +159,10 @@
             }
         }
 
-        //the faster way to calculate distance (square roots are for squares)
-        function distSquared(r, g, b, r1, g1, b1) {
-            return sq(((r1 - r) * (r1 - r)) + ((g1 - g) * (g1 - g)) + ((b1 - b) * (b1 - b)));
+        function isDifferent(r,g,b,_r,_g,_b){
+            return sq(r-_r)+sq(g-_g)+sq(b-_b)>=threshold;
         }
-
+        
         //click the mouse and snap everything away
         function mousePressed() {
             snap();
@@ -203,9 +195,9 @@
         }
 
         //store the background image and start the animation
-        function initialize() {
-            bkgd.copy(camera, 0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height);
-            loop();
+        function getCleanBackground() {
+            camera.loadPixels();
+            cleanPlate.copy(camera, 0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height);
         }
     </script>
 </body>

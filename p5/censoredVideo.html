@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <title>Menger Sponge</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>I am censored!</h1>
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    <script defer>
+    let bkgd;
+    let camera;
+    let sampleSize = 15;
+    let threshold = 20;
+
+    //we square this so it can be used with distThreshold
+    threshold *= threshold;
+
+    function preload() {
+        noLoop();
+    }
+
+    function setup() {
+        createCanvas(320, 240); //windowWidth, windowHeight);
+        noStroke();
+        camera = createCapture(VIDEO);
+        camera.size(width, height);
+        camera.hide();
+        //save the background image
+        bkgd = createImage(camera.width, camera.height);
+        setupScene();
+    }
+
+    //show the countdown sequence to take a clear picture of the background
+    function setupScene() {
+        let start = millis();
+        let delay = 500;
+        setTimeout(() => {
+            showMessage("Stand clear.")
+        }, delay);
+        setTimeout(() => {
+            showMessage("3");
+        }, delay * 2);
+        setTimeout(() => {
+            showMessage("2")
+        }, delay * 3);
+        setTimeout(() => {
+            showMessage("1")
+        }, delay * 4);
+        setTimeout(initialize, delay * 5);
+    }
+
+    function showMessage(message) {
+        clear();
+        fill(0, 0, 0);
+        rect(0, 0, width, height);
+        textSize(50);
+        let messageWidth = textWidth(message);
+        //draw and center the text
+        fill(255);
+        text(message, round((width / 2) - (messageWidth / 2)), round(height / 2));
+    }
+
+    let i, r, g, b, r1, g1, b1;
+
+    function draw() {
+        //draw the background
+        image(bkgd, 0, 0);	
+        //go through the pixels of the camera
+        camera.loadPixels();
+        //and see what is different from the background image
+        let r1,g1,b1,r,g,b, i;
+        for (let y = 0; y < camera.height; y += sampleSize) {
+            for (let x = 0; x < camera.width; x += sampleSize) {
+                i = ((y * camera.width) + x) * 4;
+                r1 = camera.pixels[i];
+                g1 = camera.pixels[i + 1];
+                b1 = camera.pixels[i + 2];
+                r = bkgd.pixels[i];
+                g = bkgd.pixels[i + 1];
+                b = bkgd.pixels[i + 2];
+
+                if (isDifferent(r1, g1, b1, r, g, b)) {				
+                    fill(color(r1,g1,b1));
+                    rect(x, y, sampleSize, sampleSize);
+                } 
+            }
+        }
+    }
+
+    function isDifferent(r1, g1, b1, r2, g2, b2) {
+        let r = sq(r2 - r1);
+        let g = sq(g2 - g1);
+        let b = sq(b2 - b1);
+        return r + g + b > threshold;
+    }
+
+    //store the background image and start the animation
+    function initialize() {
+        bkgd.copy(camera, 0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height);
+        bkgd.loadPixels();
+        loop();
+    }
+
+    function mousePressed() {
+        bkgd.copy(camera, 0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height);
+        bkgd.loadPixels();
+    }
+    </script>
+</body>
+
+</html>

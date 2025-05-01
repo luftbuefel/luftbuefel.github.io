@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <script src="https://aframe.io/releases/1.7.0/aframe.min.js"></script>
+<!--      <script src="https://aframe.io/releases/1.5.0/aframe.min.js" ></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-face-aframe.prod.js"></script>
+    
+    <title>Face Tracking AR</title>
+
+    <!-- The website stylesheet -->
+    <link rel="stylesheet" href="/style.css" />
+
+  </head>
+
+  <body>
+    <!--- Popup messages -->
+    <!--<div id="overlay">
+      <div id="gameMessage">
+        <h2 id="gameMessageTitle">gameMessageTitle</h2>
+        <p id="gameMessageText">
+          Message text
+        </p>
+        <button id="gameMessageButton" onclick="hideMessage()">Game Message Button</button>
+      </div>
+    </div>
+
+    <script>
+      //This is for the popup window messages
+      function showMessage(
+        newMessageTitle,
+        newMessage,
+        newButtonMessage = "Play",
+        callback = null
+      ) {
+        document.getElementById("overlay").style.display = "block";
+        document.getElementById("gameMessageTitle").innerHTML = newMessageTitle;
+        document.getElementById("gameMessageText").innerHTML = newMessage;
+        let closeBtn = document.getElementById("gameMessageButton");
+        closeBtn.innerText = newButtonMessage;
+        closeBtn.onclick = () => {
+          hideMessage(callback);
+        };
+      }
+      //hide the message overlay to play the game
+      function hideMessage(callback = null) {
+        document.getElementById("overlay").style.display = "none";
+        //run a callback function if there is one
+        if (callback) {
+          callback();
+        }
+      }
+
+      //on game start show the instructions
+      showMessage(
+        "Title of message",
+        "Message.",
+        "OK Button",
+        () => {
+          console.log("message closed");
+        }
+      );
+    </script>
+      -->
+    <a-scene mindar-face embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-assets>
+            <a-asset-item src="./assets/eyebrow.glb" id="eyebrow"></a-asset-item>
+        </a-assets>
+        <a-camera active="false" position="0 0 0"></a-camera>
+        
+          <a-gltf-model rotation="0 0 270" position = "0 0 3" scale="1 1 1" src="#eyebrow"></a-gltf-model>
+<!--
+        <a-entity mindar-face-target="anchorIndex: 1">
+	       <a-sphere color="green" radius="0.1"></a-sphere>
+        </a-entity>
+-->
+        
+        <a-entity mindar-face-target="anchorIndex: 66">
+          <a-gltf-model rotation="0 0 270" scale=".7 .95 .7" src="#eyebrow"></a-gltf-model>
+        </a-entity>
+        <a-entity mindar-face-target="anchorIndex: 282">
+          <a-gltf-model rotation="0 0 270" scale=".7 .95 .7" src="#eyebrow"></a-gltf-model>
+        </a-entity>
+    </a-scene>
+  </body>
+</html>

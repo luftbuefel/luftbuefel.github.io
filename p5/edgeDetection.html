@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <title>Edge Detection</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>Edge Detection</h1>
+    <script>
+        //code for a popup with instructions can go here
+        let topMargin = 50*2;
+    </script>
+    
+    <script>
+    let camera;
+    let camWidth = 320;
+    let camHeight = 240;
+
+    let edges;
+
+    function setup() {
+        camera = createCapture(VIDEO);
+        camera.size(camWidth, camHeight);
+        camera.hide();
+
+        edges = createImage(camera.width, camera.height);
+
+        let proportion = camera.width/camera.height;
+        createCanvas((windowHeight-topMargin)*proportion, windowHeight-topMargin);
+    }
+
+    function draw() {
+        camera.loadPixels();
+        if(camera.pixels.length==0){
+            return;
+        }
+        edges.copy(camera,1,0, camWidth, camHeight,1,0, camWidth, camHeight)
+        edges.loadPixels();
+        let c, cLeft, cam, diff, i;
+        let offset = -4;
+
+        for( i = 0;i<camera.pixels.length;i+=4){
+            if(i%(camera.width*4)==0){
+                continue;
+            }
+            cam = camera.pixels;
+            //get the location's color and the color of its left neighbor
+            c = color(cam[i],cam[i+1],cam[i+2]);		
+            cLeft = color(cam[i+offset],cam[i+1+offset],cam[i+2+offset]);
+            //compare their brightness
+            // diff = (cam[i]+cam[i+1]+cam[i+2])-(cam[i-4]+cam[i+1-4]+cam[i+2-4]);
+            diff = map(abs(brightness(c)-brightness(cLeft)),0,50, 0,255);
+            // diff= abs(brightness(c)-brightness(cLeft));
+            // diff=diff>50?diff:0;
+            edges.pixels[i] = diff;
+            edges.pixels[i+1] = diff;
+            edges.pixels[i+2] = diff;
+        }
+        edges.updatePixels();
+        copy(edges,0,0,edges.width, edges.height,0,0,width, height);
+    }
+    </script>
+</body>
+
+</html>
+

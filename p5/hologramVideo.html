@@ -16,108 +16,112 @@
     </script>
     
     <script>
-    let video;
-    let bkgd;
-    let replace;
-    // How different must a pixel be to be a foreground pixel
-    let threshold = 20;
+        let camera;
+        let cleanPlate;
+        // How different must a pixel be to be a foreground pixel
+        let threshold = 30;
+        //squared to do quicker difference calculations
+        threshold *=threshold;
+        let start = false;
+        let hologram;
+        
+        function setup() {
+            noLoop();
+            camera = createCapture(VIDEO);
+            camera.size(320, 240);
+            camera.hide();
+            let proportion = camera.width/camera.height;
+            createCanvas(round(proportion*(windowHeight-topMargin)), windowHeight-topMargin);   
+            cleanPlate = createImage(camera.width, camera.height);
+            hologram = createImage(camera.width, camera.height);
+            initialize();
+        }
 
-    function setup() {
-        video = createCapture(VIDEO);
-        video.size(320, 240);
-        video.hide();
-        createCanvas(round((video.width / video.height) * (windowHeight-topMargin)), windowHeight-topMargin);
-        bkgd = createImage(video.width, video.height);
-        replace = createImage(video.width, video.height);
-//        createCanvas(windowWidth, windowHeight-topMargin);
-        setupScene();
-    }
-
-    function setupScene() {
-        noLoop();
-        let start = millis();
-        let delay = 1000;
-        setTimeout(() => {
-            showMessage("Stand clear.")
-        }, delay);
-        setTimeout(() => {
-            loop();
-            showMessage("3");
-        }, delay * 2);
-        setTimeout(() => {
-            showMessage("2")
-        }, delay * 3);
-        setTimeout(() => {
-            showMessage("1")
-        }, delay * 4);
-        setTimeout(initialize, delay * 5);
-    }
-
-    function showMessage(message) {
-        clear();
-        fill(0, 0, 0);
-        rect(0, 0, width, height);
-        textSize(50);
-        let messageWidth = textWidth(message);
-        //draw and center the text
-        fill(255);
-        text(message, (width / 2) - (messageWidth / 2), height / 2);
-    }
+         function initialize(){
+            let delay = 700;
+            showMessage("Stand Clear");
+            setTimeout(()=>{showMessage("3")},delay);
+            setTimeout(()=>{showMessage("2")},delay*2);
+            setTimeout(()=>{showMessage("1")},delay*3);
+            setTimeout(()=>{
+                getCleanBackground(); 
+                start = true;
+                loop();
+            },delay*4);
+        }
+        
+        function showMessage(message) {
+            background(0);
+            textSize(50);
+            let messageWidth = textWidth(message);
+            //draw and center the text
+            fill(255);
+            text(message, round((width / 2) - (messageWidth / 2)), round(height / 2));
+        }
 
 
-    let r1, g1, b1, r2, g2, b2, diff, i;
+        let r1, g1, b1, r2, g2, b2, different, i;
 
-    function draw() {
-
-        replace.loadPixels();
-        video.loadPixels();
-        bkgd.loadPixels();
-        for (let x = 0; x < video.width; x++) {
-            for (let y = 0; y < video.height; y++) {
-                let i = ((y * video.width) + x) * 4;
-                //compare the foreground and background color
-                r1 = video.pixels[i];
-                g1 = video.pixels[i + 1];
-                b1 = video.pixels[i + 2];
-                r2 = bkgd.pixels[i];
-                g2 = bkgd.pixels[i + 1];
-                b2 = bkgd.pixels[i + 2];
-                diff = dist(r1, g1, b1, r2, g2, b2);
-
-                //Is the foreground color different from the background color
-                if (diff > threshold) {
-                    // If so, display the foreground color but make it a bit bluer
-                    replace.pixels[i] = r1;
-                    replace.pixels[i + 1] = g1;
-                    replace.pixels[i + 2] = constrain(b1 + 150, 0, 255);
-                    replace.pixels[i + 3] = 200;
-                } else {
-                    //show the background color
-                    replace.pixels[i] = r2;
-                    replace.pixels[i + 1] = g2;
-                    replace.pixels[i + 2] = b2;
-                }
-                //add some stripes to the hologram; the randomness makes them jittery 
-                let position = random([2, 4]);
-                if (y % position == 0 || y % position + 1 == 0) {
-                    replace.pixels[i + 3] = 0;
+        function draw() {
+            if(!start){
+                return;
+            }
+            hologram.loadPixels();
+            camera.loadPixels();
+            cleanPlate.loadPixels();
+            for (let x = 0; x < camera.width; x++) {
+                for (let y = 0; y < camera.height; y++) {
+                    let i = ((y * camera.width) + x) * 4;
+                    //compare the foreground and background color
+                    r1 = camera.pixels[i];
+                    g1 = camera.pixels[i + 1];
+                    b1 = camera.pixels[i + 2];
+                    r2 = cleanPlate.pixels[i];
+                    g2 = cleanPlate.pixels[i + 1];
+                    b2 = cleanPlate.pixels[i + 2];
+                    different = isDifferent(r1, g1, b1, r2, g2, b2);
+                    //Is the foreground color different from the background color
+                    if (different) {
+                        // If so, display the foreground color but make it a bit bluer
+                        hologram.pixels[i] = r1;
+                        hologram.pixels[i + 1] = g1;
+                        hologram.pixels[i + 2] = constrain(b1 + 150, 0, 255);
+                        //make partially transparent
+                        hologram.pixels[i + 3] = 200;
+                    } else {
+                        //show the background color
+                        hologram.pixels[i] = r2;
+                        hologram.pixels[i + 1] = g2;
+                        hologram.pixels[i + 2] = b2;
+                        hologram.pixels[i + 3] = 255;
+                    }
+                    //add some stripes to the hologram; the randomness makes them jittery 
+                    let position = random([2, 4]);
+                    if (y % position == 0 || y % position + 1 == 0) {
+                        hologram.pixels[i + 3] = 0;
+                    }
                 }
             }
+            //draw the background
+            copy(cleanPlate, 0, 0, cleanPlate.width, cleanPlate.height, 0, 0, width, height);
+            //draw the hologram
+            hologram.updatePixels();
+            copy(hologram, 0, 0, hologram.width, hologram.height, 0, 0, width, height);
         }
-        //draw the background
-        copy(bkgd, 0, 0, bkgd.width, bkgd.height, 0, 0, round((video.width / video.height) * height), height);
-        replace.updatePixels();
-        copy(replace, 0, 0, replace.width, replace.height, 0, 0, round((video.width / video.height) * height), height);
-    }
 
-    function mousePressed() {
-        initialize();
-    }
+        function isDifferent(r,g,b,_r,_g,_b){
+            return sq(r-_r)+sq(g-_g)+sq(b-_b)>=threshold;
+        }
 
-    function initialize() {
-        replace.copy(video, 0, 0, video.width, video.height, 0, 0, video.width, video.height);
-        bkgd.copy(video, 0, 0, video.width, video.height, 0, 0, video.width, video.height);
-    }
+        function mousePressed() {
+            getCleanBackground();
+        }
+
+        function getCleanBackground() {
+            camera.loadPixels();
+            cleanPlate.copy(camera, 0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height);
+            hologram.copy(camera, 0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height);
+        }
     </script>
 </body>
 

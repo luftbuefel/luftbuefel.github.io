@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/addons/p5.sound.js" integrity="sha512-TU9AWtV5uUZPX8dbBAH8NQF1tSdigPRRT82vllAQ1Ke28puiqLA6ZVKxtUGlgrH6yWFnkKy+sE6luNEGH9ar0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>I am exploded!</title>
+    <link rel="stylesheet" href="./p5.css">
+</head>
+
+<body>   
+	<h1>I am exploded!</h1>
+    
+     <script>
+        
+        class Pixel {
+
+            constructor(x, y, size) {
+                this.originX = x;
+                this.originY = y;
+                this.size = size;
+                this.color = color(0, 0, 0, 0);
+                this.reset();
+            }
+
+            draw() {
+                fill(this.color);
+                rect(this.x, this.y, this.size, this.size);
+            }
+
+            reset() {
+                this.color = color(0, 0, 0, 0);
+                this.x = this.originX;
+                this.y = this.originY;
+                this.falling = false;
+                this.wiggling = false;
+                this.active = true;
+                this.gravity = random(5, 10);
+                let angle = random(360);
+                let distance = random(30);
+                this.speedX = distance*sin(angle);
+                this.speedY = distance*cos(angle);
+            }
+
+            move() {
+                //only move and draw active pixels
+                if (!this.active) {
+                    return;
+                }
+                //if the pixel is visible and falling, move it
+                if (this.falling && alpha(this.color) == 255) {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    this.speedY += this.gravity;
+                }
+                if(this.wiggling){
+                    this.x+=sin(frameCount);
+                }
+                //if the pixel is offscreen then reset it back to its original position
+                if (this.y > height || this.x < 0 || this.x > width) {
+                    this.active = false;
+                }
+                this.draw();
+            }
+
+            fall() {
+                this.falling = true;
+            }
+            
+            wiggle(){
+                this.wiggling = true;
+            }
+
+        }
+        
+        let allPixels = [];
+
+        let popSound;
+
+        let cleanPlate;
+
+        let camera;
+        let sampleSize;
+        let numColumns = 200;
+        let threshold = 20;
+        //we square this so it can be used with distThreshold
+        threshold *= threshold;
+
+        function preload() {
+            popSound = loadSound("../audio/pop.mp3");
+        }
+        
+        function setup() {
+            noLoop();       
+            noStroke();
+            camera = createCapture(VIDEO);
+            camera.size(640,480);
+            camera.hide();
+//            let proportion = camera.width/camera.height;
+            createCanvas(640,480);//round(proportion*(windowHeight-topMargin)), windowHeight-topMargin);   
+            cleanPlate = createImage(camera.width, camera.height);
+            //calculate the sample size needed
+            sampleSize = floor(camera.width / numColumns);
+            let multiplier = width/cleanPlate.width;
+            //create a grid of pixel particles that covers the screen
+            for (let y = 0; y < height; y += sampleSize) {
+                for (let x = 0; x < width; x += sampleSize) {
+                    allPixels.push(new Pixel(x, y, sampleSize))
+//                    allPixels.push(new Pixel(x*sampleSize, y*sampleSize, sampleSize*sampleSize))
+                }
+            }
+            initialize();
+        }
+
+        //show the countdown sequence to take a clear picture of the background
+        function initialize(){
+            let delay = 700;
+            showMessage("Stand Clear");
+            setTimeout(()=>{showMessage("3")},delay);
+            setTimeout(()=>{showMessage("2")},delay*2);
+            setTimeout(()=>{showMessage("1")},delay*3);
+            setTimeout(()=>{
+                getCleanBackground(); 
+                loop();
+            },delay*4);
+        }
+        
+        function showMessage(message) {
+            background(0);
+            textSize(50);
+            let messageWidth = textWidth(message);
+            //draw and center the text
+            fill(255);
+            text(message, round((width / 2) - (messageWidth / 2)), round(height / 2));
+        }
+
+        let i, r, g, b, r1, g1, b1;
+
+        function draw() {
+            cleanPlate.loadPixels();
+            //draw the background
+            copy(cleanPlate, 0, 0,cleanPlate.width, cleanPlate.height, 0, 0, width, height);
+            camera.loadPixels();
+            //go through the pixels of the camera
+            //and see what is different from the background image
+            for (let pixel of allPixels) {
+                //update a pixel's colors as long as it is not falling
+                if (!pixel.falling) {
+                    i = ((pixel.y * width) + pixel.x) * 4;
+                    r = camera.pixels[i];
+                    g = camera.pixels[i + 1];
+                    b = camera.pixels[i + 2];
+                    r1 = cleanPlate.pixels[i];
+                    g1 = cleanPlate.pixels[i + 1];
+                    b1 = cleanPlate.pixels[i + 2];
+                    //when pixels are different, color them to match the camera
+                    if (isDifferent(r, g, b, r1, g1, b1)) {
+                        pixel.color = color(r, g, b, 255);
+                    } else {
+                        //when pixels aren't that different, hide them
+                        pixel.color = color(0, 0, 0, 0);
+                    }
+                }
+                //animate the pixels
+                pixel.move();
+            }
+        }
+
+        function isDifferent(r,g,b,_r,_g,_b){
+            return sq(r-_r)+sq(g-_g)+sq(b-_b)>=threshold;
+        }
+        
+        //click the mouse and explode everything
+        function mousePressed() {
+            explode();
+            wiggle();
+        }
+
+        //run the pop effect
+        function explode() {
+            //play the sound
+            popSound.play();
+            for (let pixel of allPixels) {
+				pixel.fall();
+            }
+            setTimeout(resetAll, 3000);
+        }
+         
+         function wiggle(){
+             for(let pixel of allPixels){
+                 pixel.wiggle();
+             }
+         }
+         
+        function resetAll(){
+            for (let pixel of allPixels) {
+                pixel.reset();
+            }
+        }
+         
+        //store the background image and start the animation
+        function getCleanBackground() {
+            camera.loadPixels();
+            cleanPlate.copy(camera, 0, 0, camera.width, camera.height, 0, 0, camera.width, camera.height);
+        }
+    </script>
+</body>
+
+</html>

@@ -117,7 +117,7 @@
 
         let camera;
         let sampleSize = 25;
-        let threshold = 400 ;
+        let threshold = 30 ;
         //we square this so it can be used with distThreshold
         threshold *= threshold;
 
@@ -159,7 +159,7 @@
                 g1 = bkgd.pixels[i + 1];
                 b1 = bkgd.pixels[i + 2];
                 //when pixels are different, emit some fire from that location
-                if (distSquared(r, g, b, r1, g1, b1) > threshold) {
+                if (isDifferent(r, g, b, r1, g1, b1)) {
                     emitter.emit();
                 }
                 //animate the pixels
@@ -168,11 +168,10 @@
             bkgd.copy(camera, 0, 0, camera.width, camera.height, 0, 0, width, height);
         }
 
-        //the faster way to calculate distance (square roots are for squares)
-        function distSquared(r, g, b, r1, g1, b1) {
-            return sq(((r1 - r) * (r1 - r)) + ((g1 - g) * (g1 - g)) + ((b1 - b) * (b1 - b)));
+        function isDifferent(r,g,b,_r,_g,_b){
+            return sq(r-_r)+sq(g-_g)+sq(b-_b)>=threshold;
         }
-        
+
         
     </script>
 </body>
