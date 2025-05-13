@@ -158,20 +158,36 @@
 
 
         let level3 = `
-        ****************
-        *     b        *
-        *  ******      *
-        *     ^ d      *
-        *********   $  *
-        *       ^      *
-        *   ******     D
-        *   *  # *   a *
-        *   *    *     *
-        *   *    **    *
-        *   *  $  *    *
-        *   *     ***  *
-        * @ *          *
-        ****************`;
+        ********************
+        *      $$$      ^  *
+        *gQQdQQ$b$         *
+        *QQQ#QQQ****d*******
+        * QQQQQ    *  a a a*
+        *          *    $  *
+        *          *   $   *
+        *   $   *  *  $    *
+        *    $  *  *     ^ *
+        *     $ *  *  ~    *
+        *b      *  *   ~   *
+        *       *       ~  *
+        *   @   *        ~g*
+        ********************`;
+        
+        let levelWin=`
+        ********************
+        *gg$g$g$$$$g$gg$ggg*
+        *gg$g$g$gg$g$gg$ggg*
+        *gg$g$g$gg$g$gg$ggg*
+        *ggg$gg$gg$g$gg$ggg*
+        *ggg$gg$$$$g$$$$ggg*
+        *gggggggggggggggggg*
+        *g$ggg$g$$$g$gg$g~g*
+        *g$ggg$gg$gg$$g$g~g*
+        *g$g$g$gg$gg$g$$g~g*
+        *gg$$$ggg$gg$g$$ggg*
+        *gg$g$gg$$$g$gg$g@g*
+        *gggggggggggggggggg*
+        ********************`;
     </script>
     <script>
         class Player extends Tile {
@@ -234,7 +250,7 @@
     //Game Engine
     //https://openprocessing.org/sketch/1193290 
 
-    let levels = [level2, level1, level3];
+    let levels = [level2, level1, level3, levelWin];
 
     //item keys
     const COIN = "$";
